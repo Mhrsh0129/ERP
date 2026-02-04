@@ -10,6 +10,7 @@ db_config = {
     "password": os.getenv("DB_PASSWORD"),
     "database": os.getenv("DB_NAME", "jay_shree_traders"),
     "port": int(os.getenv("DB_PORT", 3306)),
+    "ssl_disabled": False,
 }
 
 connection_pool = None
