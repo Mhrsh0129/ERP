@@ -1,4 +1,8 @@
+import sys
 import os
+
+# Ensure backend directory is in python path for module resolution
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
