@@ -16,8 +16,19 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB max file size
 
 # Initialize DB
-init_connection_pool()
-init_db_schema()
+# Initialize DB
+print("🚀 Starting Flask Application...")
+print(f"DEBUG: DB_HOST = {os.getenv('DB_HOST')}")
+print(f"DEBUG: DB_USER = {os.getenv('DB_USER')}")
+print(f"DEBUG: DB_PORT = {os.getenv('DB_PORT')}")
+# Do NOT print password!
+
+try:
+    init_connection_pool()
+    init_db_schema()
+    print("✅ Database initialized successfully.")
+except Exception as e:
+    print(f"❌ Critical Error during DB init: {e}")
 
 
 @app.route("/")
