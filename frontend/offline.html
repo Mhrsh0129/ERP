@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <title>Offline - Jay Shree Traders ERP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        p {
+            font-size: 20px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .retry-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .retry-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .retry-btn:active {
+            transform: translateY(0);
+        }
+
+        .cached-pages {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .cached-pages h2 {
+            font-size: 22px;
+            color: #374151;
+            margin-bottom: 20px;
+        }
+
+        .page-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .page-link {
+            display: inline-block;
+            padding: 15px 25px;
+            background: #f3f4f6;
+            color: #2563eb;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .page-link:hover {
+            background: #e5e7eb;
+            transform: translateX(5px);
+        }
+
+        @media (max-width: 600px) {
+            .offline-container {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            p {
+                font-size: 18px;
+            }
+
+            .retry-btn {
+                padding: 15px 30px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            📡
+        </div>
+
+        <h1>You're Offline</h1>
+
+        <p>
+            It looks like you've lost your internet connection.
+            Please check your network and try again.
+        </p>
+
+        <button class="retry-btn" onclick="window.location.reload()">
+            🔄 Retry Connection
+        </button>
+
+        <div class="cached-pages">
+            <h2>📋 Available Offline Pages</h2>
+            <div class="page-links">
+                <a href="/" class="page-link">🏠 Dashboard</a>
+                <a href="/incoming-stock.html" class="page-link">📦 Incoming Stock</a>
+                <a href="/outgoing-stock.html" class="page-link">📤 Outgoing Stock</a>
+                <a href="/inventory.html" class="page-link">📋 Live Inventory</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-retry when connection is restored
+        window.addEventListener('online', () => {
+            console.log('Connection restored! Reloading...');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+
+        // Show connection status
+        if (navigator.onLine) {
+            console.log('Online - reloading page');
+            window.location.reload();
+        }
+    </script>
+</body>
+
+</html>
