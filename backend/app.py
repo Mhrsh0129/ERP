@@ -35,6 +35,36 @@ except Exception as e:
     print(f"❌ Critical Error during DB init: {e}")
 
 
+@app.route("/api/debug")
+def debug_db():
+    try:
+        import mysql.connector
+        from db_config import db_config
+
+        # Test raw connection to get exact error
+        print("Testing manual connection...")
+        conn = mysql.connector.connect(**db_config)
+        if conn.is_connected():
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": "Successfully connected to Aiven DB!",
+                    "host": db_config.get("host"),
+                }
+            )
+        else:
+            return jsonify(
+                {
+                    "status": "error",
+                    "message": "Connected but is_connected() returned False",
+                }
+            ), 500
+    except Exception as e:
+        return jsonify(
+            {"status": "error", "message": str(e), "type": type(e).__name__}
+        ), 500
+
+
 @app.route("/")
 def index():
     return send_from_directory(app.static_folder, "index.html", mimetype="text/html")
