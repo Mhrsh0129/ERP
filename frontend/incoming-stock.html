@@ -1062,7 +1062,8 @@
                 document.getElementById('quantity').value = data.quantity || '';
                 document.getElementById('unit').value = data.unit || '';
                 document.getElementById('pricePerUnit').value = data.price_per_unit || '';
-                document.getElementById('gstNumber').value = data.gst_number || '';
+                // gstNumber field does not exist in incoming stock form
+                // document.getElementById('gstNumber').value = data.gst_number || '';
                 document.getElementById('discountAmount').value = data.discount_amount || 0;
 
                 // Calculate totals if we have price and quantity
