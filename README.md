@@ -23,8 +23,8 @@ A user-friendly, senior-friendly web-based ERP system for inventory management w
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python Flask
-- **Database**: MySQL
+- **Backend**: Python FastAPI & Pydantic
+- **Database**: MySQL (using PyMySQL and cryptography)
 - **Frontend**: HTML, CSS, JavaScript (Vanilla)
 - **Styling**: Custom CSS with accessibility focus
 
@@ -59,25 +59,25 @@ DB_USER=root
 DB_PASSWORD=@Maha2004
 DB_NAME=jay_shree_traders
 DB_PORT=3306
-FLASK_PORT=5000
+API_PORT=8000
 ```
 
 ### 4. Start the Application
 
 ```bash
 cd backend
-python app.py
+python run.py
 ```
 
-The server will start on `http://localhost:5000`
+The server will start API endpoints on `http://localhost:8000`. You will need to open the HTML files directly in your browser or serve them with a simple HTTP server (like `python -m http.server 5000` in the `frontend` folder).
 
 ### 5. Access the Application
 
-Open your web browser and navigate to:
-- **Dashboard**: http://localhost:5000
-- **Incoming Stock**: http://localhost:5000/incoming-stock.html
-- **Outgoing Stock**: http://localhost:5000/outgoing-stock.html
-- **Live Inventory**: http://localhost:5000/inventory.html
+Open your web browser and navigate directly to your local frontend files:
+- **Dashboard**: `frontend/index.html`
+- **Incoming Stock**: `frontend/incoming-stock.html`
+- **Outgoing Stock**: `frontend/outgoing-stock.html`
+- **Live Inventory**: `frontend/inventory.html`
 
 ## 📖 Usage Guide
 
@@ -131,22 +131,32 @@ Use the search box at the top of each page to filter records by product name, su
 ```
 JayShreeTraders_Inventory/
 ├── backend/
-│   ├── app.py              # Main Flask application
-│   ├── db_config.py        # Database configuration
-│   ├── models.py           # Database models and queries
-│   └── requirements.txt    # Python dependencies
-├── frontend/
+│   ├── app/                      # Main FastAPI application
+│   │   ├── core/                 # Database config 
+│   │   ├── models/               # Database models and queries
+│   │   ├── routers/              # API endpoints
+│   │   ├── schemas/              # Pydantic data validation
+│   │   ├── utils/                # AI Scanning integration
+│   │   └── main.py               # Application entrypoint
+│   ├── requirements.txt          # Python dependencies
+│   └── run.py                    # Server runner script
+├── frontend/                     # Static frontend files
 │   ├── css/
-│   │   └── styles.css      # Senior-friendly styling
-│   ├── js/
-│   │   └── app.js          # JavaScript utilities
-│   ├── index.html          # Dashboard page
-│   ├── incoming-stock.html # Incoming stock management
-│   ├── outgoing-stock.html # Outgoing stock management
-│   └── inventory.html      # Live inventory view
-├── .env                    # Environment variables
-├── .gitignore             # Git ignore file
-└── README.md              # This file
+│   │   └── styles.css            # Senior-friendly styling
+│   ├── js/                       # Client-side scripts
+│   │   ├── app.js          
+│   │   ├── bill-scanner.js 
+│   │   └── sw-register.js
+│   ├── index.html                # Dashboard page
+│   ├── incoming-stock.html       # Incoming stock management
+│   ├── outgoing-stock.html       # Outgoing stock management
+│   ├── inventory.html            # Live inventory view
+│   ├── manifest.json             # PWA properties
+│   └── service-worker.js         # Offline capabilities
+├── Architecture.txt              # Detailed architecture breakdown
+├── .env                          # Environment variables
+├── .gitignore                    # Git ignore file
+└── README.md                     # This file
 ```
 
 ## 🔒 Security Notes
@@ -166,8 +176,8 @@ JayShreeTraders_Inventory/
 
 ### Port Already in Use
 
-- Change `FLASK_PORT` in `.env` file
-- Or stop the process using port 5000
+- Change `API_PORT` in `.env` file
+- Or stop the process using port 8000
 
 ### Images Not Uploading
 
