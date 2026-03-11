@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Senior-friendly inventory management system for Jay Shree Traders">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JST ERP">
+
+    <title>Jay Shree Traders - Inventory Management</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>📊 Jay Shree Traders</h1>
+            <p>Inventory Management System</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="index.html" class="active">🏠 Dashboard</a></li>
+                <li><a href="incoming-stock.html">📦 Incoming Stock</a></li>
+                <li><a href="outgoing-stock.html">📤 Outgoing Stock</a></li>
+                <li><a href="inventory.html">📋 Live Inventory</a></li>
+            </ul>
+        </nav>
+
+        <div id="loading" class="loading">Loading dashboard...</div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Incoming Stock</h3>
+                    <div class="stat-value" id="totalIncoming">0</div>
+                    <p>Entries</p>
+                </div>
+                <div class="stat-card success">
+                    <h3>Total Sales</h3>
+                    <div class="stat-value" id="totalSales">₹0</div>
+                    <p>Revenue</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Outgoing Stock</h3>
+                    <div class="stat-value" id="totalOutgoing">0</div>
+                    <p>Entries</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Discounts Received</h3>
+                    <div class="stat-value" id="totalDiscountReceived">₹0</div>
+                    <p>From Suppliers</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Discounts Given</h3>
+                    <div class="stat-value" id="totalDiscountGiven">₹0</div>
+                    <p>To Customers</p>
+                </div>
+
+            </div>
+
+            <div class="card">
+                <h2>📦 Recent Incoming Stock</h2>
+                <div id="recentIncoming">
+                    <div class="empty-state">
+                        <p>No recent incoming stock entries</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📤 Recent Outgoing Stock</h2>
+                <div id="recentOutgoing">
+                    <div class="empty-state">
+                        <p>No recent outgoing stock entries</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/sw-register.js"></script>
+    <script>
+        async function loadDashboard() {
+            const result = await API.get('/dashboard');
+
+            if (result.success) {
+                const data = result.data;
+
+                document.getElementById('totalIncoming').textContent = data.total_incoming;
+                document.getElementById('totalOutgoing').textContent = data.total_outgoing;
+                document.getElementById('totalSales').textContent = formatCurrency(data.total_sales_amount);
+                document.getElementById('totalDiscountReceived').textContent = formatCurrency(data.total_discount_received);
+                document.getElementById('totalDiscountGiven').textContent = formatCurrency(data.total_discount_given);
+
+                const recentIncomingDiv = document.getElementById('recentIncoming');
+                if (data.recent_incoming && data.recent_incoming.length > 0) {
+                    recentIncomingDiv.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Supplier</th>
+                                    <th>Purchase Date</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.recent_incoming.map(item => `
+                                    <tr>
+                                        <td>${item.product_name}</td>
+                                        <td>${item.source_name}</td>
+                                        <td>${formatDate(item.date_of_purchase)}</td>
+                                        <td>${formatCurrency(item.amount)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                const recentOutgoingDiv = document.getElementById('recentOutgoing');
+                if (data.recent_outgoing && data.recent_outgoing.length > 0) {
+                    recentOutgoingDiv.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Customer</th>
+                                    <th>Sale Date</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.recent_outgoing.map(item => `
+                                    <tr>
+                                        <td>${item.product_name}</td>
+                                        <td>${item.customer_name}</td>
+                                        <td>${formatDate(item.date_of_sale)}</td>
+                                        <td>${formatCurrency(item.amount)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+            } else {
+                showAlert('Failed to load dashboard: ' + result.error, 'error');
+                document.getElementById('loading').textContent = 'Failed to load dashboard';
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+
+</html>

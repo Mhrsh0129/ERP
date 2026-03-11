@@ -1,0 +1,28 @@
+backend/
+├── app/
+│   ├── main.py                  # The FastAPI application entrypoint (sets up CORS, DB init, and includes all routers)
+│   │
+│   ├── core/                    # Core configuration files
+│   │   └── database.py          # Database connection pool and schema initialization logic
+│   │
+│   ├── models/                  # Database models and queries (the core business logic)
+│   │   ├── dashboard.py         # Queries for dashboard statistics
+│   │   ├── incoming_stock.py    # Logic for purchases and incoming stock
+│   │   ├── inventory.py         # Live inventory calculation queries
+│   │   └── outgoing_stock.py    # Logic for sales and outgoing stock
+│   │
+│   ├── routers/                 # API endpoint definitions (the routes)
+│   │   ├── dashboard.py         # Endpoints: /api/dashboard, /api/test-connection, /api/debug
+│   │   ├── incoming.py          # Endpoints: /api/incoming-stock (CRUD + payments)
+│   │   ├── inventory.py         # Endpoints: /api/inventory, /api/inventory/low-stock, /api/inventory/details
+│   │   ├── outgoing.py          # Endpoints: /api/outgoing-stock and /api/sales-payments
+│   │   └── scan.py              # Endpoint: /api/scan-bill
+│   │
+│   ├── schemas/                 # Pydantic data validation models
+│   │   └── stock.py             # Request/Response data models (e.g., IncomingStockCreate, ScanBillRequest)
+│   │
+│   └── utils/                   # Helper utilities
+│       └── gemini_scanner.py    # Google Gemini AI integration for scanning bills/invoices
+│
+├── requirements.txt             # Updated Python dependencies
+└── run.py                       # Helper script to run the local server (python run.py)

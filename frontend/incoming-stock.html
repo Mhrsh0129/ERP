@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Manage incoming stock for Jay Shree Traders">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JST ERP">
+
+    <title>Incoming Stock - Jay Shree Traders</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>📦 Incoming Stock Management</h1>
+            <p>Track and manage incoming inventory</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="index.html">🏠 Dashboard</a></li>
+                <li><a href="incoming-stock.html" class="active">📦 Incoming Stock</a></li>
+                <li><a href="outgoing-stock.html">📤 Outgoing Stock</a></li>
+                <li><a href="inventory.html">📋 Live Inventory</a></li>
+            </ul>
+        </nav>
+
+        <div class="card">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 12px;">
+                <h2 style="margin: 0;">Incoming Stock List</h2>
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="openSmartScanner()" class="btn btn-success">📸 Smart Scan Bill</button>
+                    <button id="addStockBtn" class="btn btn-primary">➕ Add New Stock</button>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search by product name or supplier..."
+                    onkeyup="searchStock()">
+            </div>
+
+            <div id="stockTable">
+                <div class="loading">Loading stock data...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Incoming Stock</h2>
+                <button class="close-btn" data-modal="addModal">&times;</button>
+            </div>
+            <form id="addForm">
+                <h3 style="margin-top: 0; color: #2563eb;">📦 Product Information</h3>
+                <div class="form-group">
+                    <label for="productName">Product Name *</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label for="sourceName">Supplier Name *</label>
+                    <input type="text" id="sourceName" required>
+                </div>
+                <div class="form-group">
+                    <label for="dateOfPurchase">Purchase Date *</label>
+                    <input type="date" id="dateOfPurchase" required>
+                </div>
+
+                <h3 style="margin-top: 25px; color: #2563eb;">💰 Pricing Details</h3>
+                <div class="form-group">
+                    <label for="quantity">Quantity</label>
+                    <input type="number" id="quantity" step="0.01" placeholder="e.g., 10">
+                </div>
+                <div class="form-group">
+                    <label for="unit">Unit</label>
+                    <select id="unit">
+                        <option value="">Select Unit (Optional)</option>
+                        <option value="pieces">Pieces</option>
+                        <option value="kg">Kilograms (kg)</option>
+                        <option value="meters">Meters</option>
+                        <option value="rolls">Rolls</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pricePerUnit">Price Per Unit (₹)</label>
+                    <input type="number" id="pricePerUnit" step="0.01" placeholder="e.g., 100.00">
+                </div>
+                <div class="form-group">
+                    <label for="taxPercent">Tax Percent (%)</label>
+                    <input type="number" id="taxPercent" step="0.01" placeholder="e.g., 18">
+                </div>
+                <div class="form-group">
+                    <label for="discountAmount">Discount Received (₹)</label>
+                    <input type="number" id="discountAmount" step="0.01" placeholder="e.g., 500.00" value="0">
+                    <small style="color: var(--text-muted);">Discount from supplier (early payment, bulk, etc.)</small>
+                </div>
+                <div class="form-group">
+                    <label>Total Amount (Auto-calculated by database)</label>
+                    <input type="text" value="Will be calculated automatically" disabled
+                        style="background: #f3f4f6; color: #6b7280;">
+                </div>
+
+                <h3 style="margin-top: 25px; color: #2563eb;">💳 Payment Information</h3>
+                <div class="form-group">
+                    <label for="paymentStatus">Payment Status</label>
+                    <select id="paymentStatus">
+                        <option value="">Select Status (Optional)</option>
+                        <option value="pending">Pending</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="amountPaid">Amount Paid (₹)</label>
+                    <input type="number" id="amountPaid" step="0.01" placeholder="e.g., 500.00">
+                </div>
+                <div class="form-group">
+                    <label for="paymentType">Payment Type</label>
+                    <select id="paymentType">
+                        <option value="">Select Payment Type (Optional)</option>
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentDate">Payment Date</label>
+                    <input type="date" id="paymentDate">
+                </div>
+                <div class="form-group">
+                    <label for="deliveryDate">Delivery Date</label>
+                    <input type="date" id="deliveryDate">
+                </div>
+
+                <h3 style="margin-top: 25px; color: #2563eb;">📸 Photos/Documents</h3>
+                <div class="form-group">
+                    <label for="productPhoto">Product Photo</label>
+                    <input type="file" id="productPhoto" accept="image/*"
+                        onchange="handleImageUpload(this, 'photoPreview')">
+                    <img id="photoPreview" class="image-preview" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label for="billPhoto">Bill Photo</label>
+                    <input type="file" id="billPhoto" accept="image/*"
+                        onchange="handleImageUpload(this, 'billPreview')">
+                    <img id="billPreview" class="image-preview" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label for="biltiPhoto">Bilti Photo (Transport Document)</label>
+                    <input type="file" id="biltiPhoto" accept="image/*"
+                        onchange="handleImageUpload(this, 'biltiPreview')">
+                    <img id="biltiPreview" class="image-preview" style="display: none;">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" data-modal="addModal">Cancel</button>
+                    <button type="submit" class="btn btn-success">✓ Add Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Incoming Stock</h2>
+                <button class="close-btn" data-modal="editModal">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+
+                <h3 style="margin-top: 0; color: #2563eb;">📦 Product Information</h3>
+                <div class="form-group">
+                    <label for="editProductName">Product Name *</label>
+                    <input type="text" id="editProductName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editSourceName">Supplier Name *</label>
+                    <input type="text" id="editSourceName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editDateOfPurchase">Purchase Date *</label>
+                    <input type="date" id="editDateOfPurchase" required>
+                </div>
+
+                <h3 style="margin-top: 25px; color: #2563eb;">💰 Pricing Details</h3>
+                <div class="form-group">
+                    <label for="editQuantity">Quantity</label>
+                    <input type="number" id="editQuantity" step="0.01" placeholder="e.g., 10">
+                </div>
+                <div class="form-group">
+                    <label for="editUnit">Unit</label>
+                    <select id="editUnit">
+                        <option value="">Select Unit (Optional)</option>
+                        <option value="pieces">Pieces</option>
+                        <option value="kg">Kilograms (kg)</option>
+                        <option value="meters">Meters</option>
+                        <option value="rolls">Rolls</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editPricePerUnit">Price Per Unit (₹)</label>
+                    <input type="number" id="editPricePerUnit" step="0.01" placeholder="e.g., 100.00">
+                </div>
+                <div class="form-group">
+                    <label for="editTaxPercent">Tax Percent (%)</label>
+                    <input type="number" id="editTaxPercent" step="0.01" placeholder="e.g., 18">
+                </div>
+                <div class="form-group">
+                    <label for="editDiscountAmount">Discount Received (₹)</label>
+                    <input type="number" id="editDiscountAmount" step="0.01" placeholder="e.g., 500.00">
+                </div>
+                <div class="form-group">
+                    <label>Total Amount (Auto-calculated by database)</label>
+                    <input type="text" value="Will be calculated automatically" disabled
+                        style="background: #f3f4f6; color: #6b7280;">
+                </div>
+
+                <h3 style="margin-top: 25px; color: #2563eb;">💳 Payment Information</h3>
+                <div class="form-group">
+                    <label for="editPaymentStatus">Payment Status</label>
+                    <select id="editPaymentStatus">
+                        <option value="">Select Status (Optional)</option>
+                        <option value="pending">Pending</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editAmountPaid">Amount Paid (₹)</label>
+                    <input type="number" id="editAmountPaid" step="0.01" placeholder="e.g., 500.00">
+                </div>
+                <div class="form-group">
+                    <label for="editPaymentType">Payment Type</label>
+                    <select id="editPaymentType">
+                        <option value="">Select Payment Type (Optional)</option>
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editPaymentDate">Payment Date</label>
+                    <input type="date" id="editPaymentDate">
+                </div>
+                <div class="form-group">
+                    <label for="editDeliveryDate">Delivery Date</label>
+                    <input type="date" id="editDeliveryDate">
+                </div>
+
+                <h3 style="margin-top: 25px; color: #2563eb;">📸 Photos/Documents</h3>
+                <div class="form-group">
+                    <label for="editProductPhoto">Product Photo</label>
+                    <input type="file" id="editProductPhoto" accept="image/*"
+                        onchange="handleImageUpload(this, 'editPhotoPreview')">
+                    <img id="editPhotoPreview" class="image-preview" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label for="editBillPhoto">Bill Photo</label>
+                    <input type="file" id="editBillPhoto" accept="image/*"
+                        onchange="handleImageUpload(this, 'editBillPreview')">
+                    <img id="editBillPreview" class="image-preview" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label for="editBiltiPhoto">Bilti Photo (Transport Document)</label>
+                    <input type="file" id="editBiltiPhoto" accept="image/*"
+                        onchange="handleImageUpload(this, 'editBiltiPreview')">
+                    <img id="editBiltiPreview" class="image-preview" style="display: none;">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" data-modal="editModal">Cancel</button>
+                    <button type="submit" class="btn btn-success">✓ Update Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="paymentHistoryModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>📜 Payment History (Incoming)</h2>
+                <button class="close-btn" data-modal="paymentHistoryModal">&times;</button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div id="paymentStockDetails" class="payment-summary-container">
+                <!-- Filled dynamically -->
+            </div>
+
+            <div class="payment-layout">
+                <!-- Left: History List -->
+                <div class="transaction-list-container">
+                    <div class="section-title">
+                        <span>🕒 Transaction History</span>
+                    </div>
+                    <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Notes</th>
+                                    <th style="text-align: right;">Amount</th>
+                                    <th style="text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentHistoryBody">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right: Add Payment Form -->
+                <div class="add-payment-container">
+                    <div class="section-title">
+                        <span>➕ New Payment</span>
+                    </div>
+                    <form id="addPaymentForm">
+                        <input type="hidden" id="phStockId">
+
+                        <div class="form-group">
+                            <label>Payment Date *</label>
+                            <input type="date" id="phDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Payment Type *</label>
+                            <input type="hidden" id="phType" value="cash">
+                            <select id="phTypeSelect" required
+                                onchange="document.getElementById('phType').value = this.value">
+                                <option value="cash">Cash</option>
+                                <option value="upi">UPI</option>
+                                <option value="cheque">Cheque</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Amount (₹) *</label>
+                            <input type="number" id="phAmount" required step="0.01">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <input type="text" id="phNotes" placeholder="Optional notes">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">✓ Record Payment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/sw-register.js"></script>
+    <script>
+        // MAIN APPLICATION LOGIC
+        let stockData = [];
+        let currentStockDetails = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ DOM Content Loaded: Incoming Stock');
+
+            // Initial load
+            loadStock();
+
+            // --- Event Listeners ---
+
+            // 1. Add Stock Button
+            const addBtn = document.getElementById('addStockBtn');
+            if (addBtn) {
+                addBtn.addEventListener('click', () => {
+                    openAddModal();
+                });
+            }
+
+            // 2. Modal Close Buttons (delegation)
+            document.querySelectorAll('.close-btn[data-modal], .btn-secondary[data-modal]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const modalId = btn.getAttribute('data-modal');
+                    closeModal(modalId);
+                    if (modalId === 'paymentHistoryModal') {
+                        loadStock();
+                    }
+                });
+            });
+
+            // 3. Forms
+            const addForm = document.getElementById('addForm');
+            if (addForm) addForm.addEventListener('submit', handleAdd);
+
+            const editForm = document.getElementById('editForm');
+            if (editForm) editForm.addEventListener('submit', handleEdit);
+
+            const addPaymentForm = document.getElementById('addPaymentForm');
+            if (addPaymentForm) addPaymentForm.addEventListener('submit', handleAddPayment);
+
+            // 4. Global Action Delegation (Table Buttons & Photos)
+            document.getElementById('stockTable').addEventListener('click', handleTableClick);
+        });
+
+        // --- Core Functions ---
+
+        async function loadStock() {
+            const tableDiv = document.getElementById('stockTable');
+            tableDiv.innerHTML = '<div class="loading">Loading stock data...</div>';
+
+            const result = await API.get('/incoming-stock');
+
+            if (result.success) {
+                stockData = result.data;
+                displayStock(stockData);
+            } else {
+                tableDiv.innerHTML = `
+                    <div class="alert alert-error">Failed to load stock: ${result.error}</div>
+                `;
+            }
+        }
+
+        function displayStock(data) {
+            const tableDiv = document.getElementById('stockTable');
+
+            if (data.length === 0) {
+                tableDiv.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Stock Entries Found</h3>
+                        <p>Click "Add New Stock" to add your first entry</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Generate mobile cards for responsive design
+            const cardsHtml = data.map(item => {
+                const totalAmount = item.amount || 0;
+                const amountPaid = item.amount_paid || 0;
+                const remaining = totalAmount - amountPaid;
+
+                let paymentStatus = '';
+                let badgeClass = 'badge';
+
+                if (amountPaid === 0) {
+                    paymentStatus = 'Pending';
+                    badgeClass += ' pending';
+                } else if (remaining > 0) {
+                    paymentStatus = 'Partial';
+                    badgeClass += ' partial';
+                } else {
+                    paymentStatus = 'Paid';
+                    badgeClass += ' paid';
+                }
+
+                // Photos for card
+                let photosCardHtml = '';
+                if (item.product_photo || item.bill_photo || item.bilti_photo) {
+                    photosCardHtml = '<div class="stock-card-photos">';
+                    if (item.product_photo) {
+                        photosCardHtml += `<img src="data:image/jpeg;base64,${item.product_photo}" data-id="${item.id}" data-type="product_photo" title="Product Photo">`;
+                    }
+                    if (item.bill_photo) {
+                        photosCardHtml += `<img src="data:image/jpeg;base64,${item.bill_photo}" data-id="${item.id}" data-type="bill_photo" title="Bill Photo">`;
+                    }
+                    if (item.bilti_photo) {
+                        photosCardHtml += `<img src="data:image/jpeg;base64,${item.bilti_photo}" data-id="${item.id}" data-type="bilti_photo" title="Bilti Photo">`;
+                    }
+                    photosCardHtml += '</div>';
+                }
+
+                return `
+                    <div class="stock-card">
+                        <div class="stock-card-header">
+                            <div class="stock-card-title">
+                                <h3>${item.product_name}</h3>
+                                <p>Supplier: ${item.source_name}</p>
+                            </div>
+                            <div class="stock-card-status">
+                                <span class="${badgeClass}">${paymentStatus}</span>
+                            </div>
+                        </div>
+                        <div class="stock-card-body">
+                            <div class="stock-card-field">
+                                <label>Purchase Date</label>
+                                <span class="value">${formatDate(item.date_of_purchase)}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Quantity</label>
+                                <span class="value">${item.quantity || '-'} ${item.unit || ''}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Price/Unit</label>
+                                <span class="value">${item.price_per_unit ? formatCurrency(item.price_per_unit) : '-'}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Tax</label>
+                                <span class="value">${item.tax_percent || '0'}%</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Discount</label>
+                                <span class="value">${item.discount_amount ? formatCurrency(item.discount_amount) : '-'}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Total Amount</label>
+                                <span class="value" style="font-weight: 700;">${totalAmount ? formatCurrency(totalAmount) : '-'}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Paid</label>
+                                <span class="value">${amountPaid ? formatCurrency(amountPaid) : '-'}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Remaining</label>
+                                <span class="value" style="color: ${remaining > 0 ? 'var(--danger-color)' : 'var(--success-color)'}; font-weight: 600;">${remaining > 0 ? formatCurrency(remaining) : '-'}</span>
+                            </div>
+                        </div>
+                        ${photosCardHtml}
+                        <div class="stock-card-footer">
+                            <button type="button" class="btn btn-secondary btn-history" data-id="${item.id}">HISTORY</button>
+                            <button type="button" class="btn btn-primary btn-edit" data-id="${item.id}">EDIT</button>
+                            <button type="button" class="btn btn-danger btn-delete" data-id="${item.id}">DELETE</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const tableHtml = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Supplier</th>
+                                <th>Purchase Date</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th>Price/Unit</th>
+                                <th>Tax %</th>
+                                <th>Discount</th>
+                                <th>Total Amount</th>
+                                <th>Amount Paid</th>
+                                <th>Remaining</th>
+                                <th>Payment Status</th>
+                                <th>History</th>
+                                <th>Photos</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(item => {
+                // Calculate payment status and remaining amount
+                const totalAmount = item.amount || 0;
+                const amountPaid = item.amount_paid || 0;
+                const remaining = totalAmount - amountPaid;
+
+                let paymentStatus = '';
+                let badgeClass = 'badge';
+
+                if (amountPaid === 0) {
+                    paymentStatus = 'Pending';
+                    badgeClass += ' pending';
+                } else if (remaining > 0) {
+                    paymentStatus = 'Partial';
+                    badgeClass += ' partial';
+                } else {
+                    paymentStatus = 'Paid';
+                    badgeClass += ' paid';
+                }
+
+                // Build photos HTML - WITHOUT BASE64 IN ONCLICK
+                let photosHtml = '<div style="display: flex; gap: 5px; flex-wrap: nowrap; overflow-x: auto;">';
+
+                if (item.product_photo) {
+                    photosHtml += `<img src="data:image/jpeg;base64,${item.product_photo}" 
+                                                        class="table-photo"
+                                                        data-id="${item.id}"
+                                                        data-type="product_photo"
+                                                        title="Product Photo">`;
+                }
+                if (item.bill_photo) {
+                    photosHtml += `<img src="data:image/jpeg;base64,${item.bill_photo}" 
+                                                        class="table-photo"
+                                                        data-id="${item.id}"
+                                                        data-type="bill_photo"
+                                                        title="Bill Photo">`;
+                }
+                if (item.bilti_photo) {
+                    photosHtml += `<img src="data:image/jpeg;base64,${item.bilti_photo}" 
+                                                        class="table-photo"
+                                                        data-id="${item.id}"
+                                                        data-type="bilti_photo"
+                                                        title="Bilti Photo">`;
+                }
+
+                if (!item.product_photo && !item.bill_photo && !item.bilti_photo) {
+                    photosHtml += '<span style="color: var(--text-muted); font-size: 12px;">-</span>';
+                }
+                photosHtml += '</div>';
+
+                return `
+                                    <tr>
+                                        <td><strong>${item.product_name}</strong></td>
+                                        <td>${item.source_name}</td>
+                                        <td style="white-space: nowrap;">${formatDate(item.date_of_purchase)}</td>
+                                        <td>${item.quantity || '-'}</td>
+                                        <td>${item.unit || '-'}</td>
+                                        <td>${item.price_per_unit ? formatCurrency(item.price_per_unit) : '-'}</td>
+                                        <td>${item.tax_percent || '0'}%</td>
+                                        <td>${item.discount_amount ? formatCurrency(item.discount_amount) : '-'}</td>
+                                        <td><strong>${totalAmount ? formatCurrency(totalAmount) : '-'}</strong></td>
+                                        <td>${amountPaid ? formatCurrency(amountPaid) : '-'}</td>
+                                        <td><strong style="color: ${remaining > 0 ? 'var(--danger-color)' : 'var(--success-color)'};">${remaining > 0 ? formatCurrency(remaining) : '-'}</strong></td>
+                                        <td><span class="${badgeClass}">${paymentStatus}</span></td>
+                                        <td>
+                                            <button type="button" class="btn btn-secondary btn-history" data-id="${item.id}">HISTORY</button>
+                                        </td>
+                                        <td>${photosHtml}</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button type="button" class="btn btn-primary btn-edit" data-id="${item.id}">EDIT</button>
+                                                <button type="button" class="btn btn-danger btn-delete" data-id="${item.id}">DELETE</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // Render both cards and table - CSS controls visibility
+            tableDiv.innerHTML = cardsHtml + tableHtml;
+        }
+
+        // --- Event Handlers ---
+
+        function handleTableClick(e) {
+            const target = e.target;
+
+            // 1. Handle Action Buttons (Edit, Delete, History)
+            const btn = target.closest('button');
+            if (btn) {
+                const id = btn.getAttribute('data-id');
+                if (!id) return;
+
+                if (btn.classList.contains('btn-edit')) {
+                    e.preventDefault();
+                    openEditModal(id);
+                } else if (btn.classList.contains('btn-delete')) {
+                    e.preventDefault();
+                    deleteStock(id);
+                } else if (btn.classList.contains('btn-history')) {
+                    e.preventDefault();
+                    openPaymentModal(id);
+                }
+                return;
+            }
+
+            // 2. Handle Photo Clicks
+            if (target.tagName === 'IMG' && target.classList.contains('table-photo')) {
+                const id = target.getAttribute('data-id');
+                const type = target.getAttribute('data-type');
+                if (id && type) {
+                    showImageModalFromData(id, type);
+                }
+            }
+        }
+
+        function searchStock() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = stockData.filter(item =>
+                item.product_name.toLowerCase().includes(query) ||
+                item.source_name.toLowerCase().includes(query)
+            );
+            displayStock(filtered);
+        }
+
+        // --- Modals & Forms ---
+
+        function openAddModal() {
+            resetForm('addForm');
+            openModal('addModal');
+        }
+
+        async function handleAdd(event) {
+            event.preventDefault();
+
+            const productPhotoInput = document.getElementById('productPhoto');
+            const billPhotoInput = document.getElementById('billPhoto');
+            const biltiPhotoInput = document.getElementById('biltiPhoto');
+
+            let productPhotoBase64 = null;
+            let billPhotoBase64 = null;
+            let biltiPhotoBase64 = null;
+
+            if (productPhotoInput.files.length > 0) {
+                productPhotoBase64 = await imageToBase64(productPhotoInput.files[0]);
+            }
+            if (billPhotoInput.files.length > 0) {
+                billPhotoBase64 = await imageToBase64(billPhotoInput.files[0]);
+            }
+            if (biltiPhotoInput.files.length > 0) {
+                biltiPhotoBase64 = await imageToBase64(biltiPhotoInput.files[0]);
+            }
+
+            const quantity = document.getElementById('quantity').value;
+            const unit = document.getElementById('unit').value;
+            const pricePerUnit = document.getElementById('pricePerUnit').value;
+            const taxPercent = document.getElementById('taxPercent').value;
+            const discountAmount = document.getElementById('discountAmount').value;
+            const paymentStatus = document.getElementById('paymentStatus').value;
+            const amountPaid = document.getElementById('amountPaid').value;
+            const paymentType = document.getElementById('paymentType').value;
+
+            const data = {
+                product_name: document.getElementById('productName').value,
+                source_name: document.getElementById('sourceName').value,
+                date_of_purchase: document.getElementById('dateOfPurchase').value,
+                quantity: quantity ? parseFloat(quantity) : null,
+                unit: unit || null,
+                price_per_unit: pricePerUnit ? parseFloat(pricePerUnit) : null,
+                tax_percent: taxPercent ? parseFloat(taxPercent) : null,
+                discount_amount: discountAmount ? parseFloat(discountAmount) : 0,
+                payment_status: paymentStatus || null,
+                amount_paid: amountPaid ? parseFloat(amountPaid) : null,
+                payment_type: paymentType || null,
+                payment_date: document.getElementById('paymentDate').value || null,
+                delivery_date: document.getElementById('deliveryDate').value || null,
+                product_photo: productPhotoBase64,
+                bill_photo: billPhotoBase64,
+                bilti_photo: biltiPhotoBase64
+            };
+
+            const result = await API.post('/incoming-stock', data);
+
+            if (result.success) {
+                showAlert('Stock added successfully!', 'success');
+                closeModal('addModal');
+                loadStock();
+            } else {
+                showAlert('Failed to add stock: ' + result.error, 'error');
+            }
+        }
+
+        async function openEditModal(id) {
+            let data = stockData.find(item => item.id == id);
+
+            if (!data) {
+                const result = await API.get(`/incoming-stock/${id}`);
+                if (result.success) {
+                    data = result.data;
+                } else {
+                    showAlert('Failed to load stock data', 'error');
+                    return;
+                }
+            }
+
+            document.getElementById('editId').value = data.id;
+            document.getElementById('editProductName').value = data.product_name;
+            document.getElementById('editSourceName').value = data.source_name;
+            document.getElementById('editDateOfPurchase').value = data.date_of_purchase.split('T')[0];
+
+            document.getElementById('editQuantity').value = data.quantity || '';
+            document.getElementById('editUnit').value = data.unit || '';
+            document.getElementById('editPricePerUnit').value = data.price_per_unit || '';
+            document.getElementById('editTaxPercent').value = data.tax_percent || '';
+            document.getElementById('editDiscountAmount').value = data.discount_amount || '0';
+
+            document.getElementById('editPaymentStatus').value = data.payment_status || '';
+            document.getElementById('editAmountPaid').value = data.amount_paid || '';
+            document.getElementById('editPaymentType').value = data.payment_type || '';
+            document.getElementById('editPaymentDate').value = data.payment_date ? data.payment_date.split('T')[0] : '';
+            document.getElementById('editDeliveryDate').value = data.delivery_date ? data.delivery_date.split('T')[0] : '';
+
+            function setPreview(key, previewId) {
+                const preview = document.getElementById(previewId);
+                if (data[key]) {
+                    preview.src = 'data:image/jpeg;base64,' + data[key];
+                    preview.style.display = 'block';
+                } else {
+                    preview.style.display = 'none';
+                    preview.src = '';
+                }
+            }
+
+            setPreview('product_photo', 'editPhotoPreview');
+            setPreview('bill_photo', 'editBillPreview');
+            setPreview('bilti_photo', 'editBiltiPreview');
+
+            openModal('editModal');
+        }
+
+        async function handleEdit(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('editId').value;
+            const productPhotoInput = document.getElementById('editProductPhoto');
+            const billPhotoInput = document.getElementById('editBillPhoto');
+            const biltiPhotoInput = document.getElementById('editBiltiPhoto');
+
+            let productPhotoBase64 = null;
+            let billPhotoBase64 = null;
+            let biltiPhotoBase64 = null;
+
+            if (productPhotoInput.files.length > 0) {
+                productPhotoBase64 = await imageToBase64(productPhotoInput.files[0]);
+            }
+            if (billPhotoInput.files.length > 0) {
+                billPhotoBase64 = await imageToBase64(billPhotoInput.files[0]);
+            }
+            if (biltiPhotoInput.files.length > 0) {
+                biltiPhotoBase64 = await imageToBase64(biltiPhotoInput.files[0]);
+            }
+
+            const quantity = document.getElementById('editQuantity').value;
+            const unit = document.getElementById('editUnit').value;
+            const pricePerUnit = document.getElementById('editPricePerUnit').value;
+            const taxPercent = document.getElementById('editTaxPercent').value;
+            const discountAmount = document.getElementById('editDiscountAmount').value;
+            const paymentStatus = document.getElementById('editPaymentStatus').value;
+            const amountPaid = document.getElementById('editAmountPaid').value;
+            const paymentType = document.getElementById('editPaymentType').value;
+
+            const data = {
+                product_name: document.getElementById('editProductName').value,
+                source_name: document.getElementById('editSourceName').value,
+                date_of_purchase: document.getElementById('editDateOfPurchase').value,
+                quantity: quantity ? parseFloat(quantity) : null,
+                unit: unit || null,
+                price_per_unit: pricePerUnit ? parseFloat(pricePerUnit) : null,
+                tax_percent: taxPercent ? parseFloat(taxPercent) : null,
+                discount_amount: discountAmount ? parseFloat(discountAmount) : 0,
+                payment_status: paymentStatus || null,
+                amount_paid: amountPaid ? parseFloat(amountPaid) : null,
+                payment_type: paymentType || null,
+                payment_date: document.getElementById('editPaymentDate').value || null,
+                delivery_date: document.getElementById('editDeliveryDate').value || null
+            };
+
+            if (productPhotoBase64) data.product_photo = productPhotoBase64;
+            if (billPhotoBase64) data.bill_photo = billPhotoBase64;
+            if (biltiPhotoBase64) data.bilti_photo = biltiPhotoBase64;
+
+            const result = await API.put(`/incoming-stock/${id}`, data);
+
+            if (result.success) {
+                showAlert('Stock updated successfully!', 'success');
+                closeModal('editModal');
+                loadStock();
+            } else {
+                showAlert('Failed to update stock: ' + result.error, 'error');
+            }
+        }
+
+        async function deleteStock(id) {
+            if (!confirmDelete('Are you sure you want to delete this stock entry? This action cannot be undone.')) {
+                return;
+            }
+
+            const result = await API.delete(`/incoming-stock/${id}`);
+
+            if (result.success) {
+                showAlert('Stock deleted successfully!', 'success');
+                loadStock();
+            } else {
+                showAlert('Failed to delete stock: ' + result.error, 'error');
+            }
+        }
+
+        function showImageModalFromData(id, type) {
+            const item = stockData.find(s => s.id == id);
+            if (!item || !item[type]) return;
+
+            const imageSrc = 'data:image/jpeg;base64,' + item[type];
+            showImageModal(imageSrc, 'Photo View');
+        }
+
+        function showImageModal(imageSrc, title) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                cursor: pointer;
+            `;
+
+            modal.innerHTML = `
+                <div style="text-align: center; max-width: 90%; max-height: 90%;">
+                    <h2 style="color: white; margin-bottom: 20px; font-size: 28px;">${title}</h2>
+                    <img src="${imageSrc}" style="max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                    <p style="color: white; margin-top: 20px; font-size: 20px;">Click anywhere to close</p>
+                </div>
+            `;
+
+            modal.onclick = function () {
+                document.body.removeChild(modal);
+            };
+
+            document.body.appendChild(modal);
+        }
+
+        async function openPaymentModal(stockId) {
+            const stockResult = await API.get(`/incoming-stock/${stockId}`);
+            if (!stockResult.success) {
+                showAlert('Failed to load stock details', 'error');
+                return;
+            }
+            currentStockDetails = stockResult.data;
+            document.getElementById('phStockId').value = stockId;
+            document.getElementById('phDate').valueAsDate = new Date();
+            await loadPaymentHistory(stockId);
+            openModal('paymentHistoryModal');
+        }
+
+        async function loadPaymentHistory(stockId) {
+            const result = await API.get(`/incoming-stock/${stockId}/payments`);
+            const tbody = document.getElementById('paymentHistoryBody');
+            tbody.innerHTML = '';
+
+            let totalPaid = 0;
+
+            if (result.success && result.data.length > 0) {
+                result.data.forEach(payment => {
+                    const amount = parseFloat(payment.amount);
+                    totalPaid += amount;
+
+                    let badgeClass = 'badge';
+                    if (payment.payment_type === 'cash') badgeClass += ' cash';
+                    else if (payment.payment_type === 'upi') badgeClass += ' upi';
+                    else if (payment.payment_type === 'cheque') badgeClass += ' cheque';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${formatDate(payment.payment_date)}</td>
+                        <td><span class="${badgeClass}" style="background-color: #e5e7eb; color: #374151; padding: 2px 8px; border-radius: 12px; font-size: 0.85em;">${payment.payment_type.toUpperCase()}</span></td>
+                        <td>${payment.notes || '-'}</td>
+                        <td style="text-align: right; font-weight: 600;">${formatCurrency(amount)}</td>
+                        <td style="text-align: center;">
+                            <button onclick="window.deletePayment(${payment.id}, ${stockId})" class="close-btn" style="font-size: 18px;" title="Delete Payment">
+                                🗑️
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="padding: 20px;">No payment records found</td></tr>`;
+            }
+
+            const totalAmount = currentStockDetails.amount || 0;
+            const remaining = totalAmount - totalPaid;
+
+            const summaryContainer = document.getElementById('paymentStockDetails');
+            summaryContainer.innerHTML = `
+                <div class="payment-summary-card total">
+                    <h3>Total Amount</h3>
+                    <div class="amount">${formatCurrency(totalAmount)}</div>
+                </div>
+                <div class="payment-summary-card paid">
+                    <h3>Total Paid</h3>
+                    <div class="amount">${formatCurrency(totalPaid)}</div>
+                </div>
+                <div class="payment-summary-card remaining">
+                    <h3>Remaining</h3>
+                    <div class="amount">${formatCurrency(remaining)}</div>
+                </div>
+            `;
+        }
+
+        async function handleAddPayment(event) {
+            event.preventDefault();
+
+            const stockId = document.getElementById('phStockId').value;
+            const typeSelect = document.getElementById('phTypeSelect');
+
+            const data = {
+                payment_date: document.getElementById('phDate').value,
+                payment_type: typeSelect ? typeSelect.value : document.getElementById('phType').value,
+                amount: parseFloat(document.getElementById('phAmount').value),
+                notes: document.getElementById('phNotes').value
+            };
+
+            const result = await API.post(`/incoming-stock/${stockId}/payments`, data);
+
+            if (result.success) {
+                showAlert('Payment added successfully!', 'success');
+                document.getElementById('addPaymentForm').reset();
+                document.getElementById('phDate').valueAsDate = new Date();
+
+                if (typeSelect) typeSelect.value = 'cash';
+                if (document.getElementById('phType')) document.getElementById('phType').value = 'cash';
+
+                const stockResult = await API.get(`/incoming-stock/${stockId}`);
+                if (stockResult.success) {
+                    currentStockDetails = stockResult.data;
+                }
+                loadPaymentHistory(stockId);
+            } else {
+                showAlert('Failed to add payment: ' + result.error, 'error');
+            }
+        }
+
+        async function deletePayment(paymentId, stockId) {
+            if (!confirm('Are you sure you want to delete this payment record?')) return;
+
+            const result = await API.delete(`/payments/${paymentId}`);
+
+            if (result.success) {
+                showAlert('Payment deleted successfully!', 'success');
+
+                const stockResult = await API.get(`/incoming-stock/${stockId}`);
+                if (stockResult.success) {
+                    currentStockDetails = stockResult.data;
+                }
+                loadPaymentHistory(stockId);
+            } else {
+                showAlert('Failed to delete payment: ' + result.error, 'error');
+            }
+        }
+
+        window.deletePayment = deletePayment;
+
+        // Bill Scanner Integration
+        function openSmartScanner() {
+            billScanner.open('incoming', (result) => {
+                // Open the form modal first (clears previous data)
+                document.getElementById('addStockBtn').click();
+
+                // Callback when data is extracted
+                const data = result.data;
+
+                // Auto-fill the form
+                document.getElementById('productName').value = data.product_name || '';
+                document.getElementById('sourceName').value = data.supplier_name || '';
+                document.getElementById('dateOfPurchase').value = data.date || '';
+                document.getElementById('quantity').value = data.quantity || '';
+                document.getElementById('unit').value = data.unit || '';
+                document.getElementById('pricePerUnit').value = data.price_per_unit || '';
+                // gstNumber field does not exist in incoming stock form
+                // document.getElementById('gstNumber').value = data.gst_number || '';
+                document.getElementById('discountAmount').value = data.discount_amount || 0;
+
+                // Calculate totals if we have price and quantity
+                if (data.price_per_unit && data.quantity) {
+                    const subtotal = data.price_per_unit * data.quantity;
+                    // Subtotal field does not exist in form
+                    // document.getElementById('subtotal').value = subtotal.toFixed(2);
+
+                    if (data.tax_percentage) {
+                        document.getElementById('taxPercent').value = data.tax_percentage;
+                        // Tax Amount and Total Amount are auto-calculated or read-only without IDs in this form
+                        // const taxAmount = (subtotal * data.tax_percentage) / 100;
+                        // document.getElementById('taxAmount').value = taxAmount.toFixed(2);
+                        // document.getElementById('totalAmount').value = (subtotal + taxAmount).toFixed(2);
+                    } else if (data.total_amount) {
+                        // document.getElementById('totalAmount').value = data.total_amount;
+                    }
+                }
+
+                // Show success message
+                showAlert(`Bill scanned successfully! ${result.confidence ? `(${Math.round(result.confidence * 100)}% confidence)` : ''} Please review the data.`, 'success');
+            });
+        }
+
+    </script>
+    <script src="js/bill-scanner.js"></script>
+</body>
+
+</html>

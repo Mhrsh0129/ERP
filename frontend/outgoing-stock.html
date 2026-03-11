@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Manage outgoing stock and sales for Jay Shree Traders">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JST ERP">
+
+    <title>Outgoing Stock - Jay Shree Traders</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- jsPDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>📤 Outgoing Stock Management</h1>
+            <p>Track and manage sales and deliveries</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="index.html">🏠 Dashboard</a></li>
+                <li><a href="incoming-stock.html">📦 Incoming Stock</a></li>
+                <li><a href="outgoing-stock.html" class="active">📤 Outgoing Stock</a></li>
+                <li><a href="inventory.html">📋 Live Inventory</a></li>
+            </ul>
+        </nav>
+
+        <div class="card">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 12px;">
+                <h2 style="margin: 0;">Outgoing Stock List</h2>
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="openSmartScanner()" class="btn btn-success">📸 Smart Scan Bill</button>
+                    <button class="btn btn-primary" onclick="openAddModal()">➕ Add New Sale</button>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search by product name or customer..."
+                    onkeyup="searchStock()">
+            </div>
+
+            <div id="stockTable">
+                <div class="loading">Loading stock data...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Sale</h2>
+                <button class="close-btn" onclick="closeModal('addModal')">&times;</button>
+            </div>
+            <form id="addForm" onsubmit="handleAdd(event)">
+                <div class="form-group">
+                    <label for="invoiceNo">Invoice No (Optional)</label>
+                    <input type="text" id="invoiceNo" placeholder="Auto-generated if empty">
+                </div>
+                <div class="form-group">
+                    <label for="productName">Product Name *</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label for="pricePerUnit">Price per Unit (₹) *</label>
+                    <input type="number" id="pricePerUnit" step="0.01" required oninput="calculateTotals('add')">
+                </div>
+                <div class="form-group">
+                    <label for="customerName">Customer Name *</label>
+                    <input type="text" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="gstNumber">GST Number (Optional)</label>
+                    <input type="text" id="gstNumber" placeholder="e.g. 23ABCDE1234F1Z5">
+                </div>
+                <div class="form-group">
+                    <label for="dateOfSale">Sale Date *</label>
+                    <input type="date" id="dateOfSale" required>
+                </div>
+                <div class="form-row" style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" id="quantity" value="1" min="1" required oninput="calculateTotals('add')">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="unit">Unit</label>
+                        <select id="unit">
+                            <option value="pcs">Pcs</option>
+                            <option value="mtr">Meters</option>
+                            <option value="kg">Kg</option>
+                            <option value="roll">Rolls</option>
+                            <option value="box">Boxes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taxPercentage">Tax %</label>
+                    <input type="number" id="taxPercentage" value="5" step="0.5" oninput="calculateTotals('add')">
+                </div>
+                <div class="form-group">
+                    <label for="discountAmount">Discount Given (₹)</label>
+                    <input type="number" id="discountAmount" step="0.01" value="0" oninput="calculateTotals('add')">
+                </div>
+                <div class="form-group">
+                    <label for="amount">Total Amount (₹)</label>
+                    <input type="number" id="amount" step="0.01" readonly style="background-color: #f1f5f9;">
+                </div>
+                <div class="form-group">
+                    <label for="tax">Tax Amount (₹)</label>
+                    <input type="number" id="tax" step="0.01" readonly style="background-color: #f1f5f9;">
+                </div>
+                <div class="form-group">
+                    <label for="paymentType">Payment Type (Optional)</label>
+                    <select id="paymentType">
+                        <option value="">Pending / Later</option>
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentDate">Payment Date</label>
+                    <input type="date" id="paymentDate">
+                </div>
+                <div class="form-group">
+                    <label for="deliveryDate">Delivery Date</label>
+                    <input type="date" id="deliveryDate">
+                </div>
+                <div class="form-row" style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="productPhotoInput">Product Photo</label>
+                        <input type="file" id="productPhotoInput" accept="image/*"
+                            onchange="handleImageUpload(this, 'productPhotoPreview')">
+                        <img id="productPhotoPreview" class="image-preview" style="display: none;">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="billPhotoInput">Bill Photo</label>
+                        <input type="file" id="billPhotoInput" accept="image/*"
+                            onchange="handleImageUpload(this, 'billPhotoPreview')">
+                        <img id="billPhotoPreview" class="image-preview" style="display: none;">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+                    <button type="submit" class="btn btn-success">✓ Add Sale</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Sale Record</h2>
+                <button class="close-btn" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <form id="editForm" onsubmit="handleEdit(event)">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label for="editInvoiceNo">Invoice No</label>
+                    <input type="text" id="editInvoiceNo">
+                </div>
+                <div class="form-group">
+                    <label for="editProductName">Product Name *</label>
+                    <input type="text" id="editProductName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPricePerUnit">Price per Unit (₹) *</label>
+                    <input type="number" id="editPricePerUnit" step="0.01" required oninput="calculateTotals('edit')">
+                </div>
+                <div class="form-group">
+                    <label for="editCustomerName">Customer Name *</label>
+                    <input type="text" id="editCustomerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editGstNumber">GST Number</label>
+                    <input type="text" id="editGstNumber" placeholder="e.g. 23ABCDE1234F1Z5">
+                </div>
+                <div class="form-group">
+                    <label for="editDateOfSale">Sale Date *</label>
+                    <input type="date" id="editDateOfSale" required>
+                </div>
+                <div class="form-row" style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="editQuantity">Quantity</label>
+                        <input type="number" id="editQuantity" min="1" required oninput="calculateTotals('edit')">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="editUnit">Unit</label>
+                        <select id="editUnit">
+                            <option value="pcs">Pcs</option>
+                            <option value="mtr">Meters</option>
+                            <option value="kg">Kg</option>
+                            <option value="roll">Rolls</option>
+                            <option value="box">Boxes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editTaxPercentage">Tax %</label>
+                    <input type="number" id="editTaxPercentage" step="0.5" oninput="calculateTotals('edit')">
+                </div>
+                <div class="form-group">
+                    <label for="editDiscountAmount">Discount Given (₹)</label>
+                    <input type="number" id="editDiscountAmount" step="0.01" oninput="calculateTotals('edit')">
+                </div>
+                <div class="form-group">
+                    <label for="editAmount">Total Amount (₹)</label>
+                    <input type="number" id="editAmount" step="0.01" readonly style="background-color: #f1f5f9;">
+                </div>
+                <div class="form-group">
+                    <label for="editTax">Tax Amount (₹)</label>
+                    <input type="number" id="editTax" step="0.01" readonly style="background-color: #f1f5f9;">
+                </div>
+                <div class="form-group">
+                    <label for="editPaymentType">Payment Type</label>
+                    <select id="editPaymentType">
+                        <option value="">Pending / Later</option>
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editPaymentDate">Payment Date</label>
+                    <input type="date" id="editPaymentDate">
+                </div>
+                <div class="form-group">
+                    <label for="editDeliveryDate">Delivery Date</label>
+                    <input type="date" id="editDeliveryDate">
+                </div>
+                <div class="form-row" style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="editProductPhotoInput">Product Photo</label>
+                        <input type="file" id="editProductPhotoInput" accept="image/*"
+                            onchange="handleImageUpload(this, 'editProductPhotoPreview')">
+                        <img id="editProductPhotoPreview" class="image-preview" style="display: none;">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="editBillPhotoInput">Bill Photo</label>
+                        <input type="file" id="editBillPhotoInput" accept="image/*"
+                            onchange="handleImageUpload(this, 'editBillPhotoPreview')">
+                        <img id="editBillPhotoPreview" class="image-preview" style="display: none;">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+                    <button type="submit" class="btn btn-success">✓ Update Sale</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment History Modal -->
+    <div id="paymentHistoryModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>📜 Payment History</h2>
+                <button class="close-btn" onclick="closeModal('paymentHistoryModal')">&times;</button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div id="paymentStockDetails" class="payment-summary-container">
+                <!-- Filled dynamically -->
+            </div>
+
+            <div class="payment-layout">
+                <!-- Left: History List -->
+                <div class="transaction-list-container">
+                    <div class="section-title">
+                        <span>🕒 Transaction History</span>
+                    </div>
+                    <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentHistoryBody">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right: Add Payment Form -->
+                <div class="add-payment-container">
+                    <div class="section-title">
+                        <span>➕ New Payment</span>
+                    </div>
+                    <form id="addPaymentForm" onsubmit="handleAddPayment(event)">
+                        <input type="hidden" id="paymentStockId">
+
+                        <div class="form-group">
+                            <label style="font-size: 16px;">Payment Date *</label>
+                            <input type="date" id="newPaymentDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 16px;">Payment Type *</label>
+                            <select id="newPaymentType" required>
+                                <option value="cash">Cash</option>
+                                <option value="upi">UPI</option>
+                                <option value="cheque">Cheque</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 16px;">Amount (₹) *</label>
+                            <input type="number" id="newPaymentAmount" step="0.01" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 16px;">Notes</label>
+                            <input type="text" id="newPaymentNotes" placeholder="Optional notes">
+                        </div>
+
+                        <button type="submit" class="btn btn-success" style="width: 100%; font-size: 18px;">✓ Record
+                            Payment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/sw-register.js"></script>
+    <script>
+        let stockData = [];
+        let buyingPriceMap = {};
+
+        async function loadStock() {
+            const tableDiv = document.getElementById('stockTable');
+            tableDiv.innerHTML = '<div class="loading">Loading stock data...</div>';
+
+            try {
+                // Fetch both Incoming and Outgoing stock data
+                const [incomingResult, outgoingResult] = await Promise.all([
+                    API.get('/incoming-stock'),
+                    API.get('/outgoing-stock')
+                ]);
+
+                if (incomingResult.success) {
+                    calculateBuyingPrices(incomingResult.data);
+                }
+
+                if (outgoingResult.success) {
+                    stockData = outgoingResult.data;
+                    displayStock(stockData);
+                } else {
+                    tableDiv.innerHTML = `<div class="alert alert-error">Failed to load sales: ${outgoingResult.error}</div>`;
+                }
+
+            } catch (error) {
+                console.error("Error loading data:", error);
+                tableDiv.innerHTML = `<div class="alert alert-error">An unexpected error occurred.</div>`;
+            }
+        }
+
+        function calculateBuyingPrices(incomingData) {
+            const productTotals = {};
+
+            // Aggregate total cost and quantity per product
+            incomingData.forEach(item => {
+                const name = item.product_name.trim().toLowerCase();
+                if (!productTotals[name]) {
+                    productTotals[name] = { totalCost: 0, totalQty: 0 };
+                }
+                const qty = parseFloat(item.quantity) || 0;
+                const price = parseFloat(item.price_per_unit) || 0;
+
+                if (qty > 0) {
+                    productTotals[name].totalCost += (qty * price);
+                    productTotals[name].totalQty += qty;
+                }
+            });
+
+            // Calculate average
+            buyingPriceMap = {};
+            for (const [name, totals] of Object.entries(productTotals)) {
+                if (totals.totalQty > 0) {
+                    buyingPriceMap[name] = totals.totalCost / totals.totalQty;
+                }
+            }
+        }
+
+        function displayStock(data) {
+            const tableDiv = document.getElementById('stockTable');
+
+            if (data.length === 0) {
+                tableDiv.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Sale Records Found</h3>
+                        <p>Click "Add New Sale" to add your first entry</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Generate both table and cards - CSS will show/hide based on screen size
+            const cardsHtml = data.map(item => {
+                const totalAmount = item.total_amount || 0;
+                const amountPaid = item.amount_paid || 0;
+                const remaining = totalAmount - amountPaid;
+
+                // Profit Calculation
+                let profitText = 'N/A';
+                let profitColor = 'grey';
+                const productName = item.product_name.trim().toLowerCase();
+                const buyingPrice = buyingPriceMap[productName];
+
+                if (buyingPrice !== undefined) {
+                    const sellingPrice = item.price_per_unit || 0;
+                    const qty = item.quantity || 0;
+                    const discount = item.discount_amount || 0;
+
+                    // Profit = Revenue (excl tax) - Cost
+                    // Revenue = (Price * Qty) - Discount
+                    // Cost = BuyingPrice * Qty
+                    const totalProfit = ((sellingPrice * qty) - discount) - (buyingPrice * qty);
+
+                    profitColor = totalProfit >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                    const sign = totalProfit > 0 ? '+' : '';
+                    profitText = `${sign}${formatCurrency(totalProfit)}`;
+                }
+
+                let paymentStatus = '';
+                let badgeClass = 'badge';
+
+                if (amountPaid === 0) {
+                    paymentStatus = 'Pending';
+                    badgeClass += ' pending';
+                } else if (remaining > 0) {
+                    paymentStatus = 'Partial';
+                    badgeClass += ' partial';
+                } else {
+                    paymentStatus = 'Paid';
+                    badgeClass += ' paid';
+                }
+
+                // Photos for card
+                let photosCardHtml = '';
+                if (item.product_photo || item.bill_photo) {
+                    photosCardHtml = '<div class="stock-card-photos">';
+                    if (item.product_photo) {
+                        photosCardHtml += `<img src="data:image/jpeg;base64,${item.product_photo}" onclick="showImageModal('data:image/jpeg;base64,${item.product_photo}', 'Product Photo')" title="Product Photo">`;
+                    }
+                    if (item.bill_photo) {
+                        photosCardHtml += `<img src="data:image/jpeg;base64,${item.bill_photo}" onclick="showImageModal('data:image/jpeg;base64,${item.bill_photo}', 'Bill Photo')" title="Bill Photo">`;
+                    }
+                    photosCardHtml += '</div>';
+                }
+
+                return `
+                    <div class="stock-card">
+                        <div class="stock-card-header">
+                            <div class="stock-card-title">
+                                <h3>${item.product_name}</h3>
+                                <p>${item.customer_name}</p>
+                            </div>
+                            <div class="stock-card-status">
+                                <span class="${badgeClass}">${paymentStatus}</span>
+                            </div>
+                        </div>
+                        <div class="stock-card-body">
+                            <div class="stock-card-field">
+                                <label>Invoice</label>
+                                <span class="value">${item.invoice_no || 'N/A'}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Date</label>
+                                <span class="value">${formatDate(item.date_of_sale)}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Quantity</label>
+                                <span class="value">${item.quantity} ${item.unit}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Total</label>
+                                <span class="value" style="font-weight: 700;">${formatCurrency(totalAmount)}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Paid</label>
+                                <span class="value">${formatCurrency(amountPaid)}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Remaining</label>
+                                <span class="value" style="color: ${remaining > 0 ? 'var(--danger-color)' : 'var(--success-color)'}; font-weight: 600;">${remaining > 0 ? formatCurrency(remaining) : '-'}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Discount</label>
+                                <span class="value">${item.discount_amount ? formatCurrency(item.discount_amount) : '-'}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>Profit</label>
+                                <span class="value" style="color: ${profitColor}; font-weight: 600;">${profitText}</span>
+                            </div>
+                            <div class="stock-card-field">
+                                <label>GST Number</label>
+                                <span class="value">${item.gst_number || '-'}</span>
+                            </div>
+                        </div>
+                        ${photosCardHtml}
+                        <div class="stock-card-footer">
+                            <button type="button" class="btn btn-secondary btn-view-bill" data-id="${item.id}">📄 Bill</button>
+                            <button type="button" class="btn btn-secondary btn-history" data-id="${item.id}">📜 History</button>
+                            <button type="button" class="btn btn-primary btn-edit" data-id="${item.id}">✏️ Edit</button>
+                            <button type="button" class="btn btn-danger btn-delete" data-id="${item.id}">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Table HTML (same as before)
+            const tableHtml = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>View Bill</th>
+                                <th>Invoice</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Customer</th>
+                                <th>GST No</th>
+                                <th>Date</th>
+                                <th>Discount</th>
+                                <th>Total</th>
+                                <th>Profit</th>
+                                <th>Paid</th>
+                                <th>Remaining</th>
+                                <th>Status</th>
+                                <th>History</th>
+                                <th>Photos</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(item => {
+                const totalAmount = item.total_amount || 0;
+                const amountPaid = item.amount_paid || 0;
+                const remaining = totalAmount - amountPaid;
+
+                // Profit Calculation
+                let profitHtml = '<span style="color: grey; font-size: 13px;">N/A</span>';
+                const productName = item.product_name.trim().toLowerCase();
+                const buyingPrice = buyingPriceMap[productName];
+
+                if (buyingPrice !== undefined) {
+                    const sellingPrice = item.price_per_unit || 0;
+                    const qty = item.quantity || 0;
+                    const discount = item.discount_amount || 0;
+
+                    const totalProfit = ((sellingPrice * qty) - discount) - (buyingPrice * qty);
+
+                    const color = totalProfit >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                    const sign = totalProfit > 0 ? '+' : '';
+                    profitHtml = `<strong style="color: ${color}">${sign}${formatCurrency(totalProfit)}</strong>`;
+                }
+
+                let paymentStatus = '';
+                let badgeClass = 'badge';
+
+                if (amountPaid === 0) {
+                    paymentStatus = 'Pending';
+                    badgeClass += ' pending';
+                } else if (remaining > 0) {
+                    paymentStatus = 'Partial';
+                    badgeClass += ' partial';
+                } else {
+                    paymentStatus = 'Paid';
+                    badgeClass += ' paid';
+                }
+
+                // Build photos HTML
+                let photosHtml = '<div style="display: flex; gap: 5px; flex-wrap: nowrap; overflow-x: auto;">';
+
+                if (item.product_photo) {
+                    photosHtml += `<img src="data:image/jpeg;base64,${item.product_photo}" 
+                                                        class="table-photo"
+                                                        data-type="product_photo"
+                                                        onclick="showImageModal('data:image/jpeg;base64,${item.product_photo}', 'Product Photo')" 
+                                                        title="Product Photo">`;
+                }
+
+                if (item.bill_photo) {
+                    photosHtml += `<img src="data:image/jpeg;base64,${item.bill_photo}" 
+                                                        class="table-photo"
+                                                        data-type="bill_photo"
+                                                        onclick="showImageModal('data:image/jpeg;base64,${item.bill_photo}', 'Bill Photo')" 
+                                                        title="Bill Photo">`;
+                }
+
+                if (!item.product_photo && !item.bill_photo) {
+                    photosHtml += '<span style="color: var(--text-muted); font-size: 11px;">-</span>';
+                }
+
+                photosHtml += '</div>';
+
+                return `
+                                    <tr>
+                                        <td>
+                                            <button type="button" class="btn btn-secondary btn-view-bill" data-id="${item.id}" title="View Bill" style="padding: 5px 10px;">
+                                                VIEW BILL
+                                            </button>
+                                        </td>
+                                        <td><small style="color: var(--text-secondary);">${item.invoice_no || '-'}</small></td>
+                                        <td><strong>${item.product_name}</strong></td>
+                                        <td>${item.quantity} ${item.unit}</td>
+                                        <td>${item.customer_name}</td>
+                                        <td><small style="color: var(--text-secondary);">${item.gst_number || '-'}</small></td>
+                                        <td style="white-space: nowrap;">${formatDate(item.date_of_sale)}</td>
+                                        <td>${item.discount_amount ? formatCurrency(item.discount_amount) : '-'}</td>
+                                        <td><strong>${formatCurrency(totalAmount)}</strong></td>
+                                        <td>${profitHtml}</td>
+                                        <td>${formatCurrency(amountPaid)}</td>
+                                        <td><strong style="color: ${remaining > 0 ? 'var(--danger-color)' : 'var(--success-color)'};">${remaining > 0 ? formatCurrency(remaining) : '-'}</strong></td>
+                                        <td><span class="${badgeClass}">${paymentStatus}</span></td>
+                                        <td>
+                                            <button type="button" class="btn btn-secondary btn-history" data-id="${item.id}">📜</button>
+                                        </td>
+                                        <td>${photosHtml}</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button type="button" class="btn btn-primary btn-edit" data-id="${item.id}" title="Edit">✏️</button>
+                                                <button type="button" class="btn btn-danger btn-delete" data-id="${item.id}" title="Delete">🗑️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // Render both - CSS handles which one is visible
+            tableDiv.innerHTML = cardsHtml + tableHtml;
+        }
+
+
+        // --- Bill Generation Logic ---
+        async function openViewBill(id) {
+            // Find item data
+            const item = stockData.find(s => s.id == id);
+            if (!item) return;
+
+            // Fetch payment history
+            let payments = [];
+            try {
+                const historyResult = await API.get(`/outgoing-stock/${id}/payments`);
+                if (historyResult.success) {
+                    payments = historyResult.data;
+                }
+            } catch (e) {
+                console.error("Failed to load payments for bill", e);
+            }
+
+            generateBillPDF(item, payments);
+        }
+
+        async function generateBillPDF(item, payments) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            // Background - no border
+            const margin = 10;
+
+            // Company Header
+            doc.setFontSize(28);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0); // Black
+            doc.text("Jay Shree Traders", pageWidth / 2, 15, { align: "center" });
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(80, 80, 80);
+            doc.text("Premium Pocketing & Lining Fabrics", pageWidth / 2, 23, { align: "center" });
+
+            doc.setFontSize(10);
+            doc.text("GST: 23IOYPD7178E1ZG  |  MSME Reg: UDYAM-MP-27-0054321", pageWidth / 2, 30, { align: "center" });
+
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Ground Floor Shree Nath Palace, 54 - Shiv Vilas Place, Subhash Chowk", pageWidth / 2, 37, { align: "center" });
+            doc.text("Power House Gali, Opp. Bohra Masjid, Rajwada, Indore, M.P.", pageWidth / 2, 42, { align: "center" });
+
+            // Decorative lines around TAX INVOICE
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.3);
+            doc.line(20, 55, 80, 55);
+            doc.line(pageWidth - 80, 55, pageWidth - 20, 55);
+
+            // TAX INVOICE Title
+            doc.setFontSize(20);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0);
+            doc.text("INVOICE", pageWidth / 2, 56, { align: "center" });
+
+            // Info Boxes
+            const boxY = 62;
+            const boxHeight = 28;
+
+            // Left Box (Invoice Details)
+            doc.setDrawColor(0, 0, 0);
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(15, boxY, 85, boxHeight, 2, 2, "FD");
+
+            // Right Box (Customer)
+            doc.roundedRect(105, boxY, 90, boxHeight, 2, 2, "FD");
+
+            // Fill Left Box
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0);
+            doc.text("Invoice Number:", 20, boxY + 10);
+            doc.text("Invoice Date:", 20, boxY + 20);
+
+            doc.setFont("helvetica", "normal");
+            doc.text(item.invoice_no || "N/A", 65, boxY + 10);
+            doc.text(formatDate(item.date_of_sale), 65, boxY + 20);
+
+            // Fill Right Box
+            doc.setFont("helvetica", "bold");
+            doc.text("Bill To:", 110, boxY + 10);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(11);
+            doc.text(item.customer_name, 110, boxY + 18);
+
+            if (item.gst_number) {
+                doc.setFontSize(10);
+                doc.text(`GST: ${item.gst_number.toUpperCase()}`, 110, boxY + 25);
+            }
+
+            // Product Table
+            const tableStartY = 97;
+            const subtotal = item.quantity * item.price_per_unit;
+
+            doc.autoTable({
+                startY: tableStartY,
+                head: [["#", "Product", "Qty", "Rate", "Amount"]],
+                body: [[
+                    "1",
+                    item.product_name,
+                    `${item.quantity.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${item.unit}`,
+                    `Rs. ${item.price_per_unit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    `Rs. ${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                ]],
+                theme: 'plain',
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 5,
+                    font: "helvetica",
+                    fontSize: 10,
+                    cellPadding: 5,
+                    font: "helvetica",
+                    textColor: [0, 0, 0],
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
+                },
+                headStyles: {
+                    fillColor: [255, 255, 255], // White
+                    textColor: [0, 0, 0], // Black
+                    fontStyle: "bold",
+                    halign: "center",
+                    fontSize: 11,
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
+                },
+                bodyStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: [0, 0, 0],
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
+                },
+                columnStyles: {
+                    0: { halign: "center", cellWidth: 15 },
+                    1: { cellWidth: 75 },
+                    2: { halign: "center", cellWidth: 30 },
+                    3: { halign: "right", cellWidth: 30 },
+                    4: { halign: "right", cellWidth: 35 }
+                },
+                didDrawCell: function (data) {
+                    doc.setDrawColor(0, 0, 0);
+                }
+            });
+
+            // Summary Box
+            // Summary Box & Payment History (Side-by-Side) - SWAPPED POSITIONS
+            let finalY = doc.lastAutoTable.finalY + 5;
+            const summaryBoxWidth = 95;
+
+            // --- Summary Box (Left Side) ---
+            const summaryX = 15; // Starting at left margin
+
+            // Green section (Subtotal, Tax, Total) -> Now White with Black Border
+            const greenSectionHeight = 42;
+            doc.setDrawColor(0, 0, 0);
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(summaryX, finalY, summaryBoxWidth, greenSectionHeight, 2, 2, 'FD');
+
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont("helvetica", "normal");
+
+            const labelX = summaryX + 8;
+            const valueX = summaryX + summaryBoxWidth - 8;
+
+            // Subtotal
+            doc.text("Subtotal:", labelX, finalY + 10);
+            doc.text(`Rs. ${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, valueX, finalY + 10, { align: "right" });
+
+            // Discount
+            const discountAmount = parseFloat(item.discount_amount) || 0;
+            if (discountAmount > 0) {
+                doc.text("Discount:", labelX, finalY + 18);
+                doc.text(`- Rs. ${discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, valueX, finalY + 18, { align: "right" });
+            }
+
+            // Tax
+            const taxPercentage = parseFloat(item.tax_percentage) || 0;
+            const taxAmount = parseFloat(item.tax) || 0;
+            doc.text(`Tax (${taxPercentage.toFixed(2)}%)`, labelX, finalY + 26);
+            doc.text(`Rs. ${taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, valueX, finalY + 26, { align: "right" });
+
+            // Total
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(13);
+            doc.text("Total:", labelX, finalY + 38);
+            doc.text(`Rs. ${item.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, valueX, finalY + 38, { align: "right" });
+
+            // Brown section (Balance Due) -> Now White with Black Border
+            const brownY = finalY + greenSectionHeight;
+            const brownHeight = 12;
+            doc.setDrawColor(0, 0, 0);
+            doc.setFillColor(255, 255, 255);
+            doc.rect(summaryX, brownY, summaryBoxWidth, brownHeight, 'FD');
+
+            const balance = (item.total_amount - (item.amount_paid || 0));
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            doc.text("Balance Due:", labelX, brownY + 8);
+            doc.text(`Rs. ${balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, valueX, brownY + 8, { align: "right" });
+
+            // --- Payment History Section (Right Side) ---
+            // Calculate remaining width for payment table
+            // Start X = summaryX + summaryBoxWidth + 10 (gap)
+            const paymentHistoryX = summaryX + summaryBoxWidth + 10;
+            const paymentTableWidth = pageWidth - paymentHistoryX - 15; // up to right margin
+
+            if (payments && payments.length > 0) {
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(0, 0, 0);
+                doc.text("Payment History", paymentHistoryX, finalY + 5);
+
+                doc.autoTable({
+                    startY: finalY + 7,
+                    margin: { left: paymentHistoryX },
+                    tableWidth: paymentTableWidth,
+                    head: [["Date", "Mode", "Amount"]],
+                    body: payments.map(p => [
+                        formatDate(p.payment_date),
+                        p.payment_type.toUpperCase(),
+                        `Rs. ${p.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    ]),
+                    theme: 'plain',
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 3,
+                        textColor: [0, 0, 0],
+                        lineWidth: 0.1,
+                        lineColor: [0, 0, 0],
+                        overflow: 'ellipsize'
+                    },
+                    headStyles: {
+                        fillColor: [255, 255, 255],
+                        textColor: [0, 0, 0],
+                        fontStyle: "bold",
+                        fontSize: 9,
+                        lineWidth: 0.1,
+                        lineColor: [0, 0, 0],
+                        halign: 'center'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 25 },
+                        1: { cellWidth: 20, halign: 'center' },
+                        2: { halign: "right", cellWidth: 'auto' }
+                    }
+                });
+            } else {
+                doc.setFontSize(9);
+                doc.setTextColor(0, 0, 0);
+                doc.text("No payments recorded.", paymentHistoryX, finalY + 5);
+            }
+
+            // Update currentY for next section (Bank Details)
+            // Use the deeper of the two sections to ensure no overlap
+            let paymentTableHeight = (payments && payments.length > 0) ? (doc.lastAutoTable.finalY - finalY) : 10;
+            let summaryHeight = greenSectionHeight + brownHeight;
+            let currentY = finalY + Math.max(paymentTableHeight, summaryHeight) + 10;
+
+            // --- Bank Details Section ---
+            // Check if we need a new page
+            if (currentY > pageHeight - 60) {
+                doc.addPage();
+
+                // New page - no border
+
+                currentY = 20;
+            }
+
+            // Bank Details Box
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0);
+            doc.text("Bank Details for Payment", 15, currentY);
+            currentY += 3;
+
+            const bankBoxHeight = 28;
+            doc.setDrawColor(0, 0, 0);
+            doc.setFillColor(255, 255, 255); // White
+            doc.roundedRect(15, currentY, pageWidth - 30, bankBoxHeight, 2, 2, "FD");
+
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0);
+
+            const bankY = currentY + 8;
+            doc.text("Bank:", 20, bankY);
+            doc.text("Account Name:", 20, bankY + 8);
+            doc.text("Account Number:", 110, bankY);
+            doc.text("IFSC Code:", 110, bankY + 8);
+
+            doc.setFont("helvetica", "normal");
+            doc.text("HDFC Bank", 45, bankY);
+            doc.text("Jay Shree Traders", 45, bankY + 8);
+            doc.text("50200101611788", 150, bankY);
+            doc.text("HDFC0005222", 150, bankY + 8);
+
+            currentY += bankBoxHeight + 10;
+
+            // --- Thank you section ---
+            if (currentY > pageHeight - 50) {
+                doc.addPage();
+
+                // New page - no border
+
+                currentY = 20;
+            }
+
+            doc.setDrawColor(0, 0, 0);
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(15, currentY, pageWidth - 30, 35, 2, 2, 'FD');
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0);
+            doc.text("Thank you for your business!", pageWidth / 2, currentY + 12, { align: "center" });
+
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(120, 120, 120);
+            doc.text("This is a computer-generated invoice.", pageWidth / 2, currentY + 20, { align: "center" });
+
+            // Signature lines - Business Owner (Left) and Customer (Right)
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.3);
+
+            // Left signature line (Business Owner)
+            doc.line(25, currentY + 26, 80, currentY + 26);
+
+            // Right signature line (Customer)
+            doc.line(pageWidth - 80, currentY + 26, pageWidth - 25, currentY + 26);
+
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(80, 80, 80);
+
+            // Left label
+            doc.text("For Jay Shree Traders", 52, currentY + 31, { align: "center" });
+
+            // Right label
+            doc.text("Customer Signature", pageWidth - 52, currentY + 31, { align: "center" });
+
+            // Output
+            window.open(doc.output('bloburl'), '_blank');
+        }
+
+
+        function searchStock() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = stockData.filter(item =>
+                item.product_name.toLowerCase().includes(query) ||
+                item.customer_name.toLowerCase().includes(query)
+            );
+            displayStock(filtered);
+        }
+
+        function openAddModal() {
+            resetForm('addForm');
+            document.getElementById('taxPercentage').value = 5; // Default tax
+            document.getElementById('discountAmount').value = 0;
+            document.getElementById('quantity').value = 1;
+            openModal('addModal');
+        }
+        // Expose immediately for onclick handlers
+        window.openAddModal = openAddModal;
+
+        function calculateTotals(mode) {
+            const prefix = mode === 'add' ? '' : 'edit';
+            const price = parseFloat(document.getElementById(mode === 'add' ? 'pricePerUnit' : 'editPricePerUnit').value) || 0;
+            const qty = parseFloat(document.getElementById(mode === 'add' ? 'quantity' : 'editQuantity').value) || 1;
+            const taxPct = parseFloat(document.getElementById(mode === 'add' ? 'taxPercentage' : 'editTaxPercentage').value) || 0;
+            const discount = parseFloat(document.getElementById(mode === 'add' ? 'discountAmount' : 'editDiscountAmount').value) || 0;
+
+            const subtotal = price * qty;
+            const taxableValue = Math.max(0, subtotal - discount);
+            const taxAmount = taxableValue * (taxPct / 100);
+            const total = taxableValue + taxAmount;
+
+            document.getElementById(mode === 'add' ? 'tax' : 'editTax').value = taxAmount.toFixed(2);
+            document.getElementById(mode === 'add' ? 'amount' : 'editAmount').value = total.toFixed(2);
+        }
+        // Expose immediately for oninput handlers
+        window.calculateTotals = calculateTotals;
+
+
+        async function handleAdd(event) {
+            event.preventDefault();
+            console.log("handleAdd triggered");
+            try {
+                // Handle Product Photo
+                const productPhotoInput = document.getElementById('productPhotoInput');
+                let productPhotoBase64 = null;
+                if (productPhotoInput.files.length > 0) {
+                    productPhotoBase64 = await imageToBase64(productPhotoInput.files[0]);
+                }
+
+                // Handle Bill Photo
+                const billPhotoInput = document.getElementById('billPhotoInput');
+                let billPhotoBase64 = null;
+                if (billPhotoInput.files.length > 0) {
+                    billPhotoBase64 = await imageToBase64(billPhotoInput.files[0]);
+                }
+
+                const price = parseFloat(document.getElementById('pricePerUnit').value);
+                const qty = parseFloat(document.getElementById('quantity').value);
+                const taxPct = parseFloat(document.getElementById('taxPercentage').value);
+                const amount = parseFloat(document.getElementById('amount').value);
+                const taxAmt = parseFloat(document.getElementById('tax').value);
+
+                const data = {
+                    invoice_no: document.getElementById('invoiceNo').value,
+                    product_name: document.getElementById('productName').value,
+                    customer_name: document.getElementById('customerName').value,
+                    gst_number: document.getElementById('gstNumber').value,
+                    date_of_sale: document.getElementById('dateOfSale').value,
+                    quantity: qty,
+                    unit: document.getElementById('unit').value,
+                    price_per_unit: price,
+                    total_amount: amount,
+                    tax: taxAmt,
+                    tax_percentage: taxPct,
+                    discount_amount: parseFloat(document.getElementById('discountAmount').value) || 0,
+                    payment_type: document.getElementById('paymentType').value,
+                    payment_date: document.getElementById('paymentDate').value || null,
+                    delivery_date: document.getElementById('deliveryDate').value || null,
+                    bill_photo: billPhotoBase64,
+                    product_photo: productPhotoBase64
+                };
+
+                // Debug alert
+                alert("Sending Data: Price=" + price + ", Qty=" + qty + ", GST=" + data.gst_number);
+
+                const result = await API.post('/outgoing-stock', data);
+
+                if (result.success) {
+                    showAlert('Sale added successfully!', 'success');
+                    closeModal('addModal');
+                    loadStock();
+                } else {
+                    showAlert('Failed to add sale: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error("Error in handleAdd:", error);
+                showAlert('An error occurred: ' + error.message, 'error');
+            }
+        }
+
+        async function openEditModal(id) {
+            const result = await API.get(`/outgoing-stock/${id}`);
+
+            if (result.success && result.data) {
+                const item = result.data;
+                document.getElementById('editId').value = item.id;
+                document.getElementById('editInvoiceNo').value = item.invoice_no || '';
+                document.getElementById('editProductName').value = item.product_name;
+                document.getElementById('editCustomerName').value = item.customer_name;
+                document.getElementById('editGstNumber').value = item.gst_number || '';
+                document.getElementById('editDateOfSale').value = item.date_of_sale;
+                document.getElementById('editQuantity').value = item.quantity || 1;
+                document.getElementById('editUnit').value = item.unit || 'pcs';
+                document.getElementById('editPricePerUnit').value = item.price_per_unit || (item.total_amount / (item.quantity || 1)).toFixed(2);
+                document.getElementById('editDiscountAmount').value = item.discount_amount || 0;
+                document.getElementById('editAmount').value = item.total_amount;
+                document.getElementById('editTaxPercentage').value = item.tax_percentage || 5;
+                document.getElementById('editTax').value = item.tax || 0;
+                document.getElementById('editPaymentType').value = item.payment_type || '';
+                document.getElementById('editPaymentDate').value = item.payment_date || '';
+                document.getElementById('editDeliveryDate').value = item.delivery_date || '';
+
+                if (item.product_photo) {
+                    const preview = document.getElementById('editProductPhotoPreview');
+                    preview.src = 'data:image/jpeg;base64,' + item.product_photo;
+                    preview.style.display = 'block';
+                } else {
+                    document.getElementById('editProductPhotoPreview').style.display = 'none';
+                }
+
+                if (item.bill_photo) {
+                    const preview = document.getElementById('editBillPhotoPreview');
+                    preview.src = 'data:image/jpeg;base64,' + item.bill_photo;
+                    preview.style.display = 'block';
+                } else {
+                    document.getElementById('editBillPhotoPreview').style.display = 'none';
+                }
+
+                openModal('editModal');
+            }
+        }
+
+        async function handleEdit(event) {
+            event.preventDefault();
+            console.log("handleEdit triggered");
+            try {
+                const id = document.getElementById('editId').value;
+
+                // Handle Product Photo
+                const productPhotoInput = document.getElementById('editProductPhotoInput');
+                let productPhotoBase64 = null;
+                if (productPhotoInput.files.length > 0) {
+                    productPhotoBase64 = await imageToBase64(productPhotoInput.files[0]);
+                }
+
+                // Handle Bill Photo
+                const billPhotoInput = document.getElementById('editBillPhotoInput');
+                let billPhotoBase64 = null;
+                if (billPhotoInput.files.length > 0) {
+                    billPhotoBase64 = await imageToBase64(billPhotoInput.files[0]);
+                }
+
+                const price = parseFloat(document.getElementById('editPricePerUnit').value);
+                const qty = parseFloat(document.getElementById('editQuantity').value);
+                const taxPct = parseFloat(document.getElementById('editTaxPercentage').value);
+                const amount = parseFloat(document.getElementById('editAmount').value);
+                const taxAmt = parseFloat(document.getElementById('editTax').value);
+
+                const data = {
+                    invoice_no: document.getElementById('editInvoiceNo').value,
+                    product_name: document.getElementById('editProductName').value,
+                    customer_name: document.getElementById('editCustomerName').value,
+                    gst_number: document.getElementById('editGstNumber').value,
+                    date_of_sale: document.getElementById('editDateOfSale').value,
+                    quantity: qty,
+                    unit: document.getElementById('editUnit').value,
+                    price_per_unit: price,
+                    total_amount: amount,
+                    tax: taxAmt,
+                    tax_percentage: taxPct,
+                    discount_amount: parseFloat(document.getElementById('editDiscountAmount').value) || 0,
+                    payment_type: document.getElementById('editPaymentType').value,
+                    payment_date: document.getElementById('editPaymentDate').value || null,
+                    delivery_date: document.getElementById('editDeliveryDate').value || null
+                };
+
+                if (productPhotoBase64) {
+                    data.product_photo = productPhotoBase64;
+                }
+
+                if (billPhotoBase64) {
+                    data.bill_photo = billPhotoBase64;
+                };
+
+                console.log("About to send UPDATE to API with data:", data);
+                console.log("Updating ID:", id);
+
+                const result = await API.put(`/outgoing-stock/${id}`, data);
+
+                console.log("API response:", result);
+
+                if (result.success) {
+                    showAlert('Sale updated successfully!', 'success');
+                    closeModal('editModal');
+                    loadStock();
+                } else {
+                    showAlert('Failed to update sale: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error("Error in handleEdit:", error);
+                showAlert('An error occurred while updating: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteStock(id) {
+            if (!confirmDelete('Are you sure you want to delete this sale record? This action cannot be undone.')) {
+                return;
+            }
+
+            const result = await API.delete(`/outgoing-stock/${id}`);
+
+            if (result.success) {
+                showAlert('Sale deleted successfully!', 'success');
+                loadStock();
+            } else {
+                showAlert('Failed to delete sale: ' + result.error, 'error');
+            }
+        }
+
+        loadStock();
+
+        // Payment History Functions
+        let currentStockId = null;
+
+        async function openPaymentModal(id) {
+            currentStockId = id;
+            document.getElementById('paymentStockId').value = id;
+
+            // Set default date to today
+            document.getElementById('newPaymentDate').valueAsDate = new Date();
+
+            // Reset form
+            document.getElementById('addPaymentForm').reset();
+            document.getElementById('newPaymentDate').valueAsDate = new Date();
+
+            await loadPaymentHistory(id);
+            openModal('paymentHistoryModal');
+        }
+
+        async function loadPaymentHistory(stockId) {
+            // Get stock details first
+            const stockResult = await API.get(`/outgoing-stock/${stockId}`);
+            if (!stockResult.success) {
+                showAlert('Failed to load stock details', 'error');
+                return;
+            }
+            const stock = stockResult.data;
+
+            // Get payment history
+            const historyResult = await API.get(`/outgoing-stock/${stockId}/payments`);
+            const payments = historyResult.success ? historyResult.data : [];
+
+            // Calculate totals
+            const totalAmount = stock.total_amount;
+            const amountPaid = stock.amount_paid || 0;
+            const remaining = totalAmount - amountPaid;
+
+            // Update details section
+            // Update details section with Cards
+            document.getElementById('paymentStockDetails').innerHTML = `
+                <div class="payment-summary-card total">
+                    <span class="label">Total Amount</span>
+                    <span class="value">${formatCurrency(totalAmount)}</span>
+                </div>
+                <div class="payment-summary-card paid">
+                    <span class="label">Received</span>
+                    <span class="value" style="color: var(--success-color);">${formatCurrency(amountPaid)}</span>
+                </div>
+                <div class="payment-summary-card remaining">
+                    <span class="label">Remaining</span>
+                    <span class="value" style="color: ${remaining > 0 ? 'var(--danger-color)' : 'var(--text-gray)'};">${formatCurrency(remaining)}</span>
+                </div>
+            `;
+
+            // Update history table with Badges
+            const tbody = document.getElementById('paymentHistoryBody');
+            if (payments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #64748b; padding: 30px;">No payments recorded yet</td></tr>';
+            } else {
+                tbody.innerHTML = payments.map(p => `
+                    <tr>
+                        <td style="color: var(--text-gray); font-size: 14px;">
+                            ${formatDate(p.payment_date)}<br>
+                            <small>${p.notes ? p.notes : ''}</small>
+                        </td>
+                        <td><span class="badge ${p.payment_type}">${p.payment_type.toUpperCase()}</span></td>
+                        <td style="font-weight: 800; color: var(--text-dark);">${formatCurrency(p.amount)}</td>
+                        <td>
+                            <button class="close-btn" style="width: 30px; height: 30px; font-size: 20px;" onclick="deletePayment(${p.id})" title="Delete Payment">&times;</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function handleAddPayment(event) {
+            event.preventDefault();
+
+            const data = {
+                payment_date: document.getElementById('newPaymentDate').value,
+                payment_type: document.getElementById('newPaymentType').value,
+                amount: parseFloat(document.getElementById('newPaymentAmount').value),
+                notes: document.getElementById('newPaymentNotes').value
+            };
+
+            const result = await API.post(`/outgoing-stock/${currentStockId}/payments`, data);
+
+            if (result.success) {
+                showAlert('Payment added successfully!', 'success');
+                document.getElementById('addPaymentForm').reset();
+                document.getElementById('newPaymentDate').valueAsDate = new Date();
+                loadPaymentHistory(currentStockId);
+                loadStock(); // Update main table
+            } else {
+                showAlert('Failed to add payment: ' + result.error, 'error');
+            }
+        }
+
+        async function deletePayment(id) {
+            if (!confirm('Are you sure you want to delete this payment record?')) return;
+
+            const result = await API.delete(`/sales-payments/${id}`);
+
+            if (result.success) {
+                showAlert('Payment deleted!', 'success');
+                loadPaymentHistory(currentStockId);
+                loadStock(); // Update main table
+            } else {
+                showAlert('Failed to delete payment: ' + result.error, 'error');
+            }
+        }
+
+        // Image Modal
+        function showImageModal(imageSrc, title) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                cursor: pointer;
+            `;
+
+            modal.innerHTML = `
+                <img src="${imageSrc}" style="max-width: 90%; max-height: 85vh; border: 2px solid white; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+                <div style="color: white; margin-top: 15px; font-size: 1.2em;">${title}</div>
+                <div style="color: #cbd5e1; margin-top: 5px; font-size: 0.9em;">Click anywhere to close</div>
+            `;
+
+            modal.onclick = () => document.body.removeChild(modal);
+            document.body.appendChild(modal);
+        }
+
+        // Event Delegation for Table Buttons (Edit, Delete, History)
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+
+            // Use getAttribute to be safe (handles emoji clicks better)
+            // For View Bill, use data-id
+            const id = btn.getAttribute('data-id');
+            if (!id && !btn.classList.contains('close-btn')) return;
+
+            if (btn.classList.contains('btn-edit')) {
+                e.preventDefault();
+                openEditModal(id);
+            } else if (btn.classList.contains('btn-delete')) {
+                e.preventDefault();
+                deleteStock(id);
+            } else if (btn.classList.contains('btn-history')) {
+                e.preventDefault();
+                openPaymentModal(id);
+            } else if (btn.classList.contains('btn-view-bill')) {
+                e.preventDefault();
+                openViewBill(id);
+            }
+        });
+
+        // Expose ALL functions to window for inline onclick handlers
+        window.openAddModal = openAddModal;
+        window.openEditModal = openEditModal;
+        window.openPaymentModal = openPaymentModal;
+        window.deleteStock = deleteStock;
+        window.deletePayment = deletePayment;
+        window.handleAdd = handleAdd;
+        window.handleEdit = handleEdit;
+        window.handleAddPayment = handleAddPayment;
+        window.calculateTotals = calculateTotals;
+        window.showImageModal = showImageModal;
+
+        // Bill Scanner Integration
+        function openSmartScanner() {
+            billScanner.open('outgoing', (result) => {
+                // Open the form modal first (clears previous data)
+                openAddModal();
+
+                // Callback when data is extracted
+                const data = result.data;
+
+                // Auto-fill the form
+                document.getElementById('productName').value = data.product_name || '';
+                document.getElementById('customerName').value = data.customer_name || '';
+                document.getElementById('dateOfSale').value = data.date || '';
+                document.getElementById('quantity').value = data.quantity || '';
+                document.getElementById('unit').value = data.unit || '';
+                document.getElementById('pricePerUnit').value = data.price_per_unit || '';
+                document.getElementById('gstNumber').value = data.gst_number || '';
+                document.getElementById('discountAmount').value = data.discount_amount || 0;
+
+                // Calculate totals if we have price and quantity
+                if (data.price_per_unit && data.quantity) {
+                    const subtotal = data.price_per_unit * data.quantity;
+                    // Subtotal field does not exist in form, so we don't set it.
+
+                    if (data.tax_percentage) {
+                        document.getElementById('taxPercentage').value = data.tax_percentage;
+                        const taxAmount = (subtotal * data.tax_percentage) / 100;
+                        document.getElementById('tax').value = taxAmount.toFixed(2);
+                        document.getElementById('amount').value = (subtotal + taxAmount).toFixed(2);
+                    } else if (data.total_amount) {
+                        document.getElementById('amount').value = data.total_amount;
+                    }
+                }
+
+                // Show success message
+                showAlert(`Bill scanned successfully! ${result.confidence ? `(${Math.round(result.confidence * 100)}% confidence)` : ''} Please review the data.`, 'success');
+            });
+        }
+
+        console.log('✅ Outgoing Stock Script Loaded');
+    </script>
+    <script src="js/bill-scanner.js"></script>
+</body>
+
+</html>
