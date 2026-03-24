@@ -61,8 +61,12 @@ app.add_middleware(
 @app.on_event("startup")
 def startup():
     print("🚀 Starting ERP...")
-    # Create database tables if they don't exist
-    Base.metadata.create_all(bind=engine)
+    try:
+        # Create database tables if they don't exist
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database connected and tables verified.")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not connect to database on startup: {e}")
 
 
 # ── Register Routers ──────────────────────────────────────────────────────────
