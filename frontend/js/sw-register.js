@@ -1,5 +1,5 @@
 // Service Worker Registration and PWA Install Prompt
-// For Jay Shree Traders ERP
+// For ERP
 
 let deferredPrompt;
 let installButton;

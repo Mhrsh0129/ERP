@@ -1,4 +1,4 @@
-// Service Worker for Jay Shree Traders ERP
+// Service Worker for ERP
 // Version 1.0.0
 
 const CACHE_NAME = 'jst-erp-v2';
@@ -168,7 +168,7 @@ self.addEventListener('push', (event) => {
     };
 
     event.waitUntil(
-        self.registration.showNotification('Jay Shree Traders', options)
+        self.registration.showNotification('Inventory Management', options)
     );
 });
 

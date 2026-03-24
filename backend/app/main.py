@@ -21,8 +21,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # FileResponse is used to send HTML/CSS/JS files to the browser
 from fastapi.responses import FileResponse
 
-# These are our database helper functions
-from app.core.database import init_connection_pool, init_db_schema
+# These are our database components
+from app.core.database import engine, Base
 
 # These are our route groups — each file handles one section of the API
 from app.routers.incoming import router as incoming_router, payments_router
@@ -35,8 +35,8 @@ from app.routers.scan import router as scan_router
 # ── Create the app ────────────────────────────────────────────────────────────
 # FastAPI() creates the application. title and description show up in /docs
 app = FastAPI(
-    title="Jay Shree Traders ERP API",
-    description="Inventory management system for Jay Shree Traders.",
+    title="ERP API",
+    description="Inventory management system.",
     version="2.0.0",
 )
 
@@ -48,10 +48,10 @@ app = FastAPI(
 # allow_origins=["*"] means "allow requests from any website or file"
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # Allow all origins example http://localhost:5000, http://localhost:8000, etc.
     allow_credentials=True,
     allow_methods=["*"],  # Allow GET, POST, PUT, DELETE, etc.
-    allow_headers=["*"],
+    allow_headers=["*"],  # Allow any header example Content-Type, Authorization, etc.
 )
 
 
@@ -60,9 +60,9 @@ app.add_middleware(
 # We use it to set up the database before any requests come in.
 @app.on_event("startup")
 def startup():
-    print("🚀 Starting Jay Shree Traders ERP...")
-    init_connection_pool()
-    init_db_schema()
+    print("🚀 Starting ERP...")
+    # Create database tables if they don't exist
+    Base.metadata.create_all(bind=engine)
 
 
 # ── Register Routers ──────────────────────────────────────────────────────────

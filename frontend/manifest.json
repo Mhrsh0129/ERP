@@ -1,7 +1,7 @@
 {
-    "name": "Jay Shree Traders - Inventory Management",
+    "name": "Inventory Management",
     "short_name": "JST ERP",
-    "description": "Senior-friendly inventory management system for Jay Shree Traders",
+    "description": "Senior-friendly inventory management system",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",

@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2563eb">
-    <meta name="description" content="Manage outgoing stock and sales for Jay Shree Traders">
+    <meta name="description" content="Manage outgoing stock and sales">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="JST ERP">
 
-    <title>Outgoing Stock - Jay Shree Traders</title>
+    <title>Outgoing Stock</title>
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -696,7 +696,7 @@
             doc.setFontSize(28);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(0, 0, 0); // Black
-            doc.text("Jay Shree Traders", pageWidth / 2, 15, { align: "center" });
+            doc.text("Your Company Name", pageWidth / 2, 15, { align: "center" });
 
             doc.setFontSize(11);
             doc.setFont("helvetica", "normal");
@@ -962,7 +962,7 @@
 
             doc.setFont("helvetica", "normal");
             doc.text("HDFC Bank", 45, bankY);
-            doc.text("Jay Shree Traders", 45, bankY + 8);
+            doc.text("Your Company Name", 45, bankY + 8);
             doc.text("50200101611788", 150, bankY);
             doc.text("HDFC0005222", 150, bankY + 8);
 
@@ -1006,7 +1006,7 @@
             doc.setTextColor(80, 80, 80);
 
             // Left label
-            doc.text("For Jay Shree Traders", 52, currentY + 31, { align: "center" });
+            doc.text("For Your Company Name", 52, currentY + 31, { align: "center" });
 
             // Right label
             doc.text("Customer Signature", pageWidth - 52, currentY + 31, { align: "center" });

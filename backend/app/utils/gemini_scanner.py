@@ -205,12 +205,12 @@ TASK: Analyze this bill/invoice image and extract structured data.
 CLASSIFICATION:
 Determine if this is "incoming" (purchase from supplier) or "outgoing" (sale to customer).
 CRITICAL CONTEXT:
-- My Company Name: "JAY SHREE TRADERS"
+- My Company Name: "YOUR COMPANY NAME"
 - My Role: I am the owner of this ERP system.
 
 RULES FOR CLASSIFICATION:
-1. OUTGOING (Sale): If "JAY SHREE TRADERS" is the SELLER (top header, logo, or "From" section) -> It is OUTGOING.
-2. INCOMING (Purchase): If "JAY SHREE TRADERS" is the BUYER (in "Bill To", "Ship To", or "Consignee" section) -> It is INCOMING.
+1. OUTGOING (Sale): If "YOUR COMPANY NAME" is the SELLER (top header, logo, or "From" section) -> It is OUTGOING.
+2. INCOMING (Purchase): If "YOUR COMPANY NAME" is the BUYER (in "Bill To", "Ship To", or "Consignee" section) -> It is INCOMING.
 3. GENERAL Indicators:
    - INCOMING keywords: "Bought From", "Supplier", "Vendor".
    - OUTGOING keywords: "Sold To", "Customer", "Consignee".
