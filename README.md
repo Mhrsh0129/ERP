@@ -79,6 +79,13 @@ Open your web browser and navigate directly to your local frontend files:
 - **Outgoing Stock**: `frontend/outgoing-stock.html`
 - **Live Inventory**: `frontend/inventory.html`
 
+### 6. API Documentation
+
+The backend provides automatically generated interactive API documentation using Swagger UI.
+Once the server is running, you can access it at `http://localhost:5000/docs`.
+
+![API Documentation](docs_screenshot.png)
+
 ## 📖 Usage Guide
 
 ### Adding Incoming Stock
