@@ -32,6 +32,9 @@ from app.routers.dashboard import router as dashboard_router
 from app.routers.scan import router as scan_router
 
 
+import traceback
+from fastapi.responses import JSONResponse
+
 # ── Create the app ────────────────────────────────────────────────────────────
 # FastAPI() creates the application. title and description show up in /docs
 app = FastAPI(
@@ -39,6 +42,15 @@ app = FastAPI(
     description="Inventory management system.",
     version="2.0.0",
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc: Exception):
+    err_msg = traceback.format_exc()
+    print(f"Unhandled Exception: {err_msg}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal Server Error", "details": str(exc), "traceback": err_msg}
+    )
 
 
 # ── CORS Middleware ───────────────────────────────────────────────────────────

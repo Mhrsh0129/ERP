@@ -39,7 +39,10 @@ db_config = {
     "database": DB_NAME
 }
 
-DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+import urllib.parse
+# url-encode the password in case it contains special chars (like @ or #)
+safe_password = urllib.parse.quote_plus(DB_PASSWORD) if DB_PASSWORD else ""
+DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{safe_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Create SQLAlchemy engine
 engine = create_engine(
