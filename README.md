@@ -1,4 +1,4 @@
-# 📊 Jay Shree Traders - Inventory Management System
+# 📊 ERP System - Inventory Management
 
 A user-friendly, senior-friendly web-based ERP system for inventory management with MySQL database integration.
 
@@ -38,7 +38,7 @@ A user-friendly, senior-friendly web-based ERP system for inventory management w
 
 ### 1. Database Setup
 
-The database `jay_shree_traders` should already be created with the following tables:
+The database `erp_system` should already be created with the following tables:
 - `incoming_stock`
 - `outgoing_stock`
 - `live_inventory`
@@ -57,7 +57,7 @@ The `.env` file is already configured with your database credentials:
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=@Maha2004
-DB_NAME=jay_shree_traders
+DB_NAME=erp_system
 DB_PORT=3306
 API_PORT=8000
 ```
@@ -129,7 +129,7 @@ Use the search box at the top of each page to filter records by product name, su
 ## 📁 Project Structure
 
 ```
-JayShreeTraders_Inventory/
+ERP_System/
 ├── backend/
 │   ├── app/                      # Main FastAPI application
 │   │   ├── core/                 # Database config 
@@ -172,7 +172,7 @@ JayShreeTraders_Inventory/
 
 - Verify MySQL server is running
 - Check credentials in `.env` file
-- Ensure database `jay_shree_traders` exists
+- Ensure database `erp_system` exists
 
 ### Port Already in Use
 
@@ -191,7 +191,7 @@ For issues or questions, please contact the system administrator.
 
 ## 📝 License
 
-This project is proprietary software for Jay Shree Traders.
+This project is proprietary software for an ERP system.
 
 ---
 
