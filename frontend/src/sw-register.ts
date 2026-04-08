@@ -1,8 +1,10 @@
 // Service Worker Registration and PWA Install Prompt
 // For ERP
 
-let deferredPrompt;
-let installButton;
+// Use 'any' for deferredPrompt because the BeforeInstallPromptEvent
+// is not yet part of standard TypeScript DOM types
+let deferredPrompt: any;
+let installButton: HTMLButtonElement | null = null;
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
@@ -21,7 +23,7 @@ if ('serviceWorker' in navigator) {
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
 
-                    // Guard: installing is null when there's no pending worker
+                    // Guard: registration.installing can be null — only proceed if it exists
                     if (!newWorker) return;
 
                     newWorker.addEventListener('statechange', () => {
@@ -149,7 +151,8 @@ window.addEventListener('appinstalled', () => {
 function isRunningStandalone() {
     return (
         window.matchMedia('(display-mode: standalone)').matches ||
-        window.navigator.standalone === true
+        // 'standalone' is an Apple-specific property on navigator — cast to 'any' to access it safely
+        (navigator as any).standalone === true
     );
 }
 
@@ -201,7 +204,7 @@ function showUpdateNotification() {
 
     document.body.appendChild(updateBanner);
 
-    // Update button click — null guard prevents crash if element isn't in DOM yet
+    // Update button click — guard with null check before adding listener
     const updateBtn = document.getElementById('update-btn');
     if (updateBtn) {
         updateBtn.addEventListener('click', () => {
@@ -212,7 +215,7 @@ function showUpdateNotification() {
         });
     }
 
-    // Dismiss button click — null guard
+    // Dismiss button click — guard with null check before adding listener
     const dismissBtn = document.getElementById('dismiss-update');
     if (dismissBtn) {
         dismissBtn.addEventListener('click', () => {
@@ -222,7 +225,7 @@ function showUpdateNotification() {
 }
 
 // Generic notification function
-function showNotification(message, type = 'info') {
+function showNotification(message: string, type = 'info') {
     const notification = document.createElement('div');
     notification.style.cssText = `
     position: fixed;

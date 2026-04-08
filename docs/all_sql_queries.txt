@@ -1,0 +1,328 @@
+================================================================================
+                    ALL SQL QUERIES USED IN THIS PROJECT
+              (JST Inventory Management – ERP Application)
+================================================================================
+
+This file documents every SQL command and query used across all Python model
+files in the backend.  Queries are grouped by the table/view they operate on.
+
+Source files:
+  • backend/app/models/dashboard.py
+  • backend/app/models/incoming_stock.py
+  • backend/app/models/outgoing_stock.py
+  • backend/app/models/inventory.py
+
+
+
+================================================================================
+  TABLE: incoming_stock
+================================================================================
+
+-- 1. Count all incoming stock entries
+SELECT COUNT(*) AS total FROM incoming_stock;
+
+
+-- 2. Sum of total purchase amount
+SELECT SUM(amount) AS total FROM incoming_stock;
+
+
+-- 3. Sum of discount received on purchases
+SELECT SUM(discount_amount) AS total FROM incoming_stock;
+
+
+-- 4. Recent 5 incoming stock entries (for dashboard)
+SELECT product_name, source_name, date_of_purchase, quantity, unit, price_per_unit, amount
+FROM incoming_stock
+ORDER BY date_of_purchase DESC
+LIMIT 5;
+
+
+-- 5. Get all incoming stock (full details, newest first)
+SELECT id, product_name, source_name, date_of_purchase,
+       quantity, unit, price_per_unit, tax_percent, discount_amount,
+       tax_amount, amount,
+       payment_status, amount_paid, payment_type, payment_date, delivery_date,
+       product_photo, bill_photo, bilti_photo
+FROM incoming_stock
+ORDER BY date_of_purchase DESC;
+
+
+-- 6. Get a single incoming stock entry by ID
+SELECT id, product_name, source_name, date_of_purchase,
+       quantity, unit, price_per_unit, tax_percent, discount_amount,
+       tax_amount, amount,
+       payment_status, amount_paid, payment_type, payment_date, delivery_date,
+       product_photo, bill_photo, bilti_photo
+FROM incoming_stock
+WHERE id = %s;
+
+
+-- 7. Search incoming stock by product name or source name (LIKE)
+SELECT id, product_name, source_name, date_of_purchase,
+       quantity, unit, price_per_unit, tax_percent, tax_amount, amount,
+       payment_status, amount_paid, payment_type, payment_date, delivery_date,
+       product_photo, bill_photo, bilti_photo
+FROM incoming_stock
+WHERE product_name LIKE %s OR source_name LIKE %s
+ORDER BY date_of_purchase DESC;
+
+
+-- 8. Insert a new incoming stock entry
+INSERT INTO incoming_stock
+    (product_name, source_name, date_of_purchase,
+     quantity, unit, price_per_unit, tax_percent, discount_amount,
+     payment_status, amount_paid, payment_type, payment_date, delivery_date,
+     product_photo, bill_photo, bilti_photo)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+
+
+-- 9. Update incoming stock entry (with photos)
+UPDATE incoming_stock
+SET product_name=%s, source_name=%s, date_of_purchase=%s,
+    quantity=%s, unit=%s, price_per_unit=%s, tax_percent=%s, discount_amount=%s,
+    payment_status=%s, amount_paid=%s, payment_type=%s, payment_date=%s, delivery_date=%s,
+    product_photo=%s, bill_photo=%s, bilti_photo=%s
+WHERE id=%s;
+
+
+-- 10. Update incoming stock entry (without photos)
+UPDATE incoming_stock
+SET product_name=%s, source_name=%s, date_of_purchase=%s,
+    quantity=%s, unit=%s, price_per_unit=%s, tax_percent=%s, discount_amount=%s,
+    payment_status=%s, amount_paid=%s, payment_type=%s, payment_date=%s, delivery_date=%s
+WHERE id=%s;
+
+
+-- 11. Delete an incoming stock entry
+DELETE FROM incoming_stock WHERE id = %s;
+
+
+-- 12. Update amount_paid & payment_status after adding a payment
+UPDATE incoming_stock
+SET amount_paid = COALESCE(amount_paid, 0) + %s,
+    payment_status = CASE
+        WHEN (COALESCE(amount_paid, 0) + %s) >= amount THEN 'paid'
+        WHEN (COALESCE(amount_paid, 0) + %s) > 0       THEN 'partial'
+        ELSE 'pending'
+    END
+WHERE id = %s;
+
+
+-- 13. Reverse amount_paid & payment_status after deleting a payment
+UPDATE incoming_stock
+SET amount_paid = GREATEST(0, COALESCE(amount_paid, 0) - %s),
+    payment_status = CASE
+        WHEN (GREATEST(0, COALESCE(amount_paid, 0) - %s)) >= amount THEN 'paid'
+        WHEN (GREATEST(0, COALESCE(amount_paid, 0) - %s)) > 0       THEN 'partial'
+        ELSE 'pending'
+    END
+WHERE id = %s;
+
+
+
+================================================================================
+  TABLE: outgoing_stock
+================================================================================
+
+-- 1. Count all outgoing stock (sales) entries
+SELECT COUNT(*) AS total FROM outgoing_stock;
+
+
+-- 2. Sum of total sales amount
+SELECT SUM(total_amount) AS total FROM outgoing_stock;
+
+
+-- 3. Sum of discount given on sales
+SELECT SUM(discount_amount) AS total FROM outgoing_stock;
+
+
+-- 4. Recent 5 outgoing stock entries (for dashboard)
+SELECT product_name, customer_name, date_of_sale, total_amount
+FROM outgoing_stock
+ORDER BY date_of_sale DESC
+LIMIT 5;
+
+
+-- 5. Get all outgoing stock (full details, newest first)
+SELECT id, invoice_no, product_name, customer_name, gst_number, date_of_sale,
+       quantity, unit, price_per_unit, total_amount, tax, tax_percentage, discount_amount,
+       payment_status, amount_paid, payment_type, payment_date, delivery_date,
+       bill_photo, product_photo
+FROM outgoing_stock
+ORDER BY date_of_sale DESC;
+
+
+-- 6. Get a single outgoing stock entry by ID
+SELECT id, invoice_no, product_name, customer_name, gst_number, date_of_sale,
+       quantity, unit, price_per_unit, total_amount, tax, tax_percentage, discount_amount,
+       payment_status, amount_paid, payment_type, payment_date, delivery_date,
+       bill_photo, product_photo
+FROM outgoing_stock
+WHERE id = %s;
+
+
+-- 7. Search outgoing stock by product, customer, or invoice number
+SELECT id, invoice_no, product_name, customer_name, date_of_sale,
+       quantity, unit, price_per_unit, total_amount,
+       payment_status, amount_paid, payment_type, payment_date,
+       bill_photo, product_photo
+FROM outgoing_stock
+WHERE product_name LIKE %s OR customer_name LIKE %s OR invoice_no LIKE %s
+ORDER BY date_of_sale DESC;
+
+
+-- 8. Get last invoice number for auto-generation
+SELECT invoice_no FROM outgoing_stock
+WHERE invoice_no LIKE 'INV-{year}-%'
+ORDER BY invoice_no DESC
+LIMIT 1;
+
+
+-- 9. Insert a new outgoing stock (sale) entry
+INSERT INTO outgoing_stock
+    (invoice_no, product_name, customer_name, gst_number, date_of_sale,
+     quantity, unit, price_per_unit, total_amount, tax, tax_percentage, discount_amount,
+     payment_type, payment_date, delivery_date, bill_photo, product_photo,
+     amount_paid, payment_status)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, 'pending');
+
+
+-- 10. Update outgoing stock entry (base fields, photos appended dynamically)
+UPDATE outgoing_stock
+SET invoice_no=%s, product_name=%s, customer_name=%s, gst_number=%s, date_of_sale=%s,
+    quantity=%s, unit=%s, price_per_unit=%s, total_amount=%s, tax=%s,
+    tax_percentage=%s, discount_amount=%s,
+    payment_type=%s, payment_date=%s, delivery_date=%s
+    [, bill_photo=%s]          -- appended only if a new bill photo is sent
+    [, product_photo=%s]       -- appended only if a new product photo is sent
+WHERE id=%s;
+
+
+-- 11. Delete an outgoing stock entry
+DELETE FROM outgoing_stock WHERE id = %s;
+
+
+-- 12. Update amount_paid & payment_status after adding a sales payment
+UPDATE outgoing_stock
+SET amount_paid = COALESCE(amount_paid, 0) + %s,
+    payment_status = CASE
+        WHEN (COALESCE(amount_paid, 0) + %s) >= total_amount THEN 'paid'
+        WHEN (COALESCE(amount_paid, 0) + %s) > 0             THEN 'partial'
+        ELSE 'pending'
+    END
+WHERE id = %s;
+
+
+-- 13. Reverse amount_paid & payment_status after deleting a sales payment
+UPDATE outgoing_stock
+SET amount_paid = GREATEST(0, COALESCE(amount_paid, 0) - %s),
+    payment_status = CASE
+        WHEN (GREATEST(0, COALESCE(amount_paid, 0) - %s)) >= total_amount THEN 'paid'
+        WHEN (GREATEST(0, COALESCE(amount_paid, 0) - %s)) > 0             THEN 'partial'
+        ELSE 'pending'
+    END
+WHERE id = %s;
+
+
+
+================================================================================
+  TABLE: payment_transactions  (payments for incoming stock / purchases)
+================================================================================
+
+-- 1. Get all payments for a specific incoming stock entry
+SELECT id, amount, payment_date, payment_type, notes, created_at
+FROM payment_transactions
+WHERE stock_id = %s
+ORDER BY payment_date DESC;
+
+
+-- 2. Insert a new payment instalment for a purchase
+INSERT INTO payment_transactions (stock_id, amount, payment_date, payment_type, notes)
+VALUES (%s, %s, %s, %s, %s);
+
+
+-- 3. Look up a payment before deleting (to get stock_id & amount for reversal)
+SELECT stock_id, amount FROM payment_transactions WHERE id = %s;
+
+
+-- 4. Delete a payment instalment
+DELETE FROM payment_transactions WHERE id = %s;
+
+
+
+================================================================================
+  TABLE: sales_payments  (payments for outgoing stock / sales)
+================================================================================
+
+-- 1. Get all payments for a specific outgoing stock (sale) entry
+SELECT id, amount, payment_date, payment_type, notes, created_at
+FROM sales_payments
+WHERE stock_id = %s
+ORDER BY payment_date DESC;
+
+
+-- 2. Insert a new payment instalment for a sale
+INSERT INTO sales_payments (stock_id, amount, payment_date, payment_type, notes)
+VALUES (%s, %s, %s, %s, %s);
+
+
+-- 3. Look up a payment before deleting (to get stock_id & amount for reversal)
+SELECT stock_id, amount FROM sales_payments WHERE id = %s;
+
+
+-- 4. Delete a payment instalment
+DELETE FROM sales_payments WHERE id = %s;
+
+
+
+================================================================================
+  TABLE: product_details
+================================================================================
+
+-- 1. Upsert (insert or update) product details / notes
+--    Uses ON DUPLICATE KEY UPDATE because product_name is the primary key
+INSERT INTO product_details (product_name, details)
+VALUES (%s, %s)
+ON DUPLICATE KEY UPDATE details = VALUES(details);
+
+
+
+================================================================================
+  VIEW: live_inventory  (virtual/calculated — not a physical table)
+================================================================================
+
+-- 1. Get current stock for all products with supplier info & latest photo
+SELECT
+    li.product_name,
+    li.current_stock,
+    li.unit,
+    pd.details,
+    (SELECT product_photo FROM incoming_stock
+     WHERE product_name = li.product_name
+       AND product_photo IS NOT NULL
+     ORDER BY date_of_purchase DESC LIMIT 1) AS product_photo,
+    (SELECT GROUP_CONCAT(DISTINCT source_name ORDER BY source_name SEPARATOR ', ')
+     FROM incoming_stock
+     WHERE product_name = li.product_name
+       AND source_name IS NOT NULL) AS source_name
+FROM live_inventory li
+LEFT JOIN product_details pd ON li.product_name = pd.product_name
+ORDER BY li.product_name;
+
+
+
+================================================================================
+  NOTES
+================================================================================
+
+• %s placeholders are used for parameterised queries (prevents SQL injection).
+• COALESCE(x, 0)  → returns 0 if x is NULL.
+• GREATEST(0, x)  → ensures the value never goes below zero.
+• CASE…END        → SQL's equivalent of if/elif/else.
+• ON DUPLICATE KEY UPDATE → MySQL "upsert" pattern.
+• GROUP_CONCAT()  → aggregates multiple rows into a single comma-separated string.
+• live_inventory is a SQL VIEW, not a table. It auto-calculates:
+     current_stock = SUM(incoming quantity) - SUM(outgoing quantity) per product.
+• Photos are stored as BLOB (binary) and converted to/from base64 in Python.
+
+================================================================================

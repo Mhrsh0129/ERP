@@ -194,18 +194,6 @@
             }
         }
 
-        function displayLowStock(data) {
-            // Function kept for compatibility if called, but we removed the low stock section logic primarily
-            // User asked to remove Reorder Level/Status, but didn't explicitly ask to remove the separate Low Stock table if it exists
-            // However, based on "remove column reorder level and status", it implies successful state isn't reorder focused anymore.
-            // For now, I'll return empty or hide it to avoid confusion, or just leave it as is if it's not part of the main requested table.
-            // The user request was specific to the main inventory table columns.
-            // I will leave this function as is but it might not be very useful if reorder levels aren't emphasized.
-            // Actually, the user said "remove column reorder level and status", which implies they don't want to see it.
-            // I will minimize this function to do nothing or hide the container if it exists.
-            const tableDiv = document.getElementById('lowStockTable');
-            if (tableDiv) tableDiv.style.display = 'none';
-        }
 
         loadInventory();
     </script>

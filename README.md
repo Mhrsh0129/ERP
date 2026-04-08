@@ -1,205 +1,86 @@
-# 📊 ERP System - Inventory Management
+# 📊 JayShreeTraders ERP - Inventory Management
 
-A user-friendly, senior-friendly web-based ERP system for inventory management with MySQL database integration.
+A user-friendly, clean web-based ERP system for complete inventory management, built for Jay Shree Traders. Now optimized for FastAPI and SQLite with Gemini AI integration.
 
 ## ✨ Features
 
-- **📊 Dashboard**: Overview of inventory statistics and recent activities
-- **📦 Incoming Stock Management**: Track purchases from suppliers
-- **📤 Outgoing Stock Management**: Track sales to customers
-- **📋 Live Inventory**: Real-time stock levels with low stock alerts
-- **🔍 Search & Filter**: Easy search functionality across all modules
-- **📸 Product Photos**: Upload and manage product images
-- **💰 Payment Tracking**: Track payment types (Cash, UPI, Cheque) and dates
-
-## 🎨 Senior-Friendly Design
-
-- **Large Fonts**: Minimum 18px font size for easy reading
-- **Big Buttons**: Minimum 60px height buttons for easy clicking
-- **High Contrast**: Clear, readable color scheme
-- **Simple Navigation**: Only 3-4 main menu items
-- **Confirmation Dialogs**: Always confirms before deleting
-- **Clear Feedback**: Large success/error messages
+- **📊 Dashboard**: Real-time overview of inventory statistics and recent activities.
+- **📦 Incoming Stock Management**: Track purchases, supplier names, payments, and product photos.
+- **📤 Outgoing Stock Management**: Generate sales bills on the fly (creates downloadable PDFs).
+- **📋 Live Inventory**: Tracks stock in real-time.
+- **💡 Smart AI Bill Scanner**: Upload images or capture handwritten bills with Gemini Vision API to auto-fill entry forms.
+- **💰 Payment Tracking**: Keep detailed history of part payments for any purchase or sale.
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python FastAPI & Pydantic
-- **Database**: MySQL (using PyMySQL and cryptography)
-- **Frontend**: HTML, CSS, JavaScript (Vanilla)
-- **Styling**: Custom CSS with accessibility focus
+- **Backend**: Python FastAPI & Pydantic.
+- **Database**: SQLite (local database file).
+- **Frontend**: HTML, CSS, JavaScript (Vanilla PWA).
+- **AI**: Google Gemini Pro Vision API via google-generativeai.
+- **PDF Generation**: jsPDF & autoTable.
 
 ## 📋 Prerequisites
 
-- Python 3.8 or higher
-- MySQL Server 5.7 or higher
-- Web browser (Chrome, Firefox, Edge recommended)
+- Python 3.10+
+- Modern Web Browser (Chrome/Edge/Safari)
 
 ## 🚀 Installation & Setup
 
-### 1. Database Setup
+### 1. Requirements
 
-The database `erp_system` should already be created with the following tables:
-- `incoming_stock`
-- `outgoing_stock`
-- `live_inventory`
-
-### 2. Install Python Dependencies
-
+Ensure you are in the project folder and the virtual environment is set up:
 ```bash
-cd backend
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment Variables
+### 2. Configure Environment Variables
 
-The `.env` file is already configured with your database credentials:
-```
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=@Maha2004
-DB_NAME=erp_system
-DB_PORT=3306
-API_PORT=8000
+Use the `.env` file at the root of the project to set up your API keys and hosting URLs.
+```env
+GEMINI_API_KEY=your_gemini_vision_api_key
 ```
 
-### 4. Start the Application
+### 3. Start the Application
 
+Navigate to the backend start folder and run the server:
 ```bash
-cd backend
+cd backend/start
 python run.py
 ```
+*(This commands uvicorn to host the app on `http://127.0.0.1:5000`)*
 
-The server will start API endpoints on `http://localhost:8000`. You will need to open the HTML files directly in your browser or serve them with a simple HTTP server (like `python -m http.server 5000` in the `frontend` folder).
+### 4. Access the Application
 
-### 5. Access the Application
-
-Open your web browser and navigate directly to your local frontend files:
-- **Dashboard**: `frontend/index.html`
-- **Incoming Stock**: `frontend/incoming-stock.html`
-- **Outgoing Stock**: `frontend/outgoing-stock.html`
-- **Live Inventory**: `frontend/inventory.html`
-
-### 6. API Documentation
-
-The backend provides automatically generated interactive API documentation using Swagger UI.
-Once the server is running, you can access it at `http://localhost:5000/docs`.
-
-![API Documentation](docs_screenshot.png)
+Open your browser and navigate to:
+**http://127.0.0.1:5000**
 
 ## 📖 Usage Guide
 
-### Adding Incoming Stock
-
-1. Click on "📦 Incoming Stock" in the navigation
-2. Click the "➕ Add New Stock" button
-3. Fill in the form:
-   - Product Name (required)
-   - Supplier Name (required)
-   - Purchase Date (required)
-   - Amount (required)
-   - Payment Type (required)
-   - Payment Date (optional)
-   - Delivery Date (optional)
-   - Product Photo (optional)
-4. Click "✓ Add Stock"
-
-### Adding Outgoing Stock (Sales)
-
-1. Click on "📤 Outgoing Stock" in the navigation
-2. Click the "➕ Add New Sale" button
-3. Fill in the form with customer and sale details
-4. Click "✓ Add Sale"
-
-### Viewing Inventory
-
-1. Click on "📋 Live Inventory" in the navigation
-2. View current stock levels
-3. Check low stock alerts at the bottom
-
-### Editing Records
-
-1. Find the record in the table
-2. Click the "✏️ Edit" button
-3. Update the information
-4. Click "✓ Update"
-
-### Deleting Records
-
-1. Find the record in the table
-2. Click the "🗑️ Delete" button
-3. Confirm the deletion when prompted
-
-### Searching
-
-Use the search box at the top of each page to filter records by product name, supplier, or customer name.
+*   **Add Incoming Stock**: Go to incoming stock -> use the form or hit **Smart Scan Bill** to capture an image of the physical invoice.
+*   **Add Outgoing Sale**: Go to outgoing stock -> add sale. Use the "View Bill" button to preview the modern invoice, complete with automated bank details and "Jay Shree Traders" headers, then download it as a PDF for sharing.
+*   **Track Partial Payments**: Click the "History" (notebook) icon next to any incoming/outgoing record to log a partial cash pickup. It automatically updates the remaining balance.
 
 ## 📁 Project Structure
 
 ```
-ERP_System/
+JayShreeTraders_Inventory/
 ├── backend/
-│   ├── app/                      # Main FastAPI application
-│   │   ├── core/                 # Database config 
-│   │   ├── models/               # Database models and queries
-│   │   ├── routers/              # API endpoints
-│   │   ├── schemas/              # Pydantic data validation
-│   │   ├── utils/                # AI Scanning integration
-│   │   └── main.py               # Application entrypoint
-│   ├── requirements.txt          # Python dependencies
-│   └── run.py                    # Server runner script
-├── frontend/                     # Static frontend files
-│   ├── css/
-│   │   └── styles.css            # Senior-friendly styling
-│   ├── js/                       # Client-side scripts
-│   │   ├── app.js          
-│   │   ├── bill-scanner.js 
-│   │   └── sw-register.js
-│   ├── index.html                # Dashboard page
-│   ├── incoming-stock.html       # Incoming stock management
-│   ├── outgoing-stock.html       # Outgoing stock management
-│   ├── inventory.html            # Live inventory view
-│   ├── manifest.json             # PWA properties
-│   └── service-worker.js         # Offline capabilities
-├── Architecture.txt              # Detailed architecture breakdown
-├── .env                          # Environment variables
-├── .gitignore                    # Git ignore file
-└── README.md                     # This file
+│   ├── database/    # SQLite configuration
+│   ├── model/       # SQLAlchemy tables / Pydantic schemas
+│   ├── services/    # Business logic, image encoding, AI extraction
+│   ├── start/       # Server startup script (run.py)
+│   ├── vercel/      # Vercel deployment routes
+│   └── main.py      # Core FastAPI app definition
+├── frontend/        # Serves as Static Directory
+│   ├── css/         # App styles
+│   ├── js/          # Frontend Javascript, PWA service workers
+│   ├── src/         # Typescript source code
+│   └── *.html       # App views (Dashboard, Incoming, Outgoing)
+├── .env             # Root env variables (Not committed)
+├── requirements.txt # Python dependencies
+└── vercel.json      # Cloud deployment configurations
 ```
-
-## 🔒 Security Notes
-
-- The `.env` file contains sensitive database credentials
-- Never commit `.env` to version control
-- Change default passwords in production
-- Use HTTPS in production environments
-
-## 🐛 Troubleshooting
-
-### Database Connection Failed
-
-- Verify MySQL server is running
-- Check credentials in `.env` file
-- Ensure database `erp_system` exists
-
-### Port Already in Use
-
-- Change `API_PORT` in `.env` file
-- Or stop the process using port 8000
-
-### Images Not Uploading
-
-- Check file size (max 16MB for LONGBLOB)
-- Ensure file is a valid image format
-- Check browser console for errors
-
-## 📞 Support
-
-For issues or questions, please contact the system administrator.
-
-## 📝 License
-
-This project is proprietary software for an ERP system.
 
 ---
 
-**Made with ❤️ for easy inventory management**
+**Made with ❤️ for Jay Shree Traders**

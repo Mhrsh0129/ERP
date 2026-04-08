@@ -1,0 +1,13 @@
+{
+  "name": "jayshreetraders-inventory",
+  "version": "1.0.0",
+  "description": "Frontend TypeScript Setup for ERP",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.3"
+  }
+}

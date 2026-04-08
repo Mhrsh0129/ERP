@@ -4,21 +4,29 @@
  */
 
 class BillScanner {
+    // Declare all properties with proper TypeScript types
+    modal: HTMLElement | null;
+    currentImage: File | null;
+    currentImageData: string | null;
+    onDataExtracted: ((data: unknown) => void) | null;
+    suggestedType: string;
+    extractedData: unknown;
+
     constructor() {
         this.modal = null;
         this.currentImage = null;
         this.currentImageData = null;
         this.onDataExtracted = null; // Callback function
         this.suggestedType = 'incoming'; // 'incoming' or 'outgoing'
-        this.extractedData = null;   // Holds AI result until user confirms
+        this.extractedData = null;
     }
 
     /**
      * Initialize the scanner and open modal
-     * @param {string} type - 'incoming' or 'outgoing'
-     * @param {function} callback - Function to call with extracted data
+     * @param type - 'incoming' or 'outgoing'
+     * @param callback - Function to call with extracted data
      */
-    open(type, callback) {
+    open(type: string, callback: (data: unknown) => void) {
         this.suggestedType = type;
         this.onDataExtracted = callback;
         this.showModal();
@@ -34,7 +42,7 @@ class BillScanner {
         }
 
         this.modal = document.getElementById('billScannerModal');
-        // Guard: only call classList if modal element was found
+        // Guard: only call classList if modal exists
         if (this.modal) {
             this.modal.classList.add('active');
         }
@@ -177,8 +185,10 @@ class BillScanner {
     /**
      * Handle file selection
      */
-    handleFileSelect(event) {
-        const file = event.target.files[0];
+    handleFileSelect(event: Event) {
+        // Cast event.target to HTMLInputElement so TypeScript knows it has .files
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
         if (!file) return;
 
         // Validate file type
@@ -196,8 +206,13 @@ class BillScanner {
         // Read and display image
         const reader = new FileReader();
         reader.onload = (e) => {
-            this.currentImageData = e.target.result;
-            document.getElementById('billPreview').src = this.currentImageData;
+            if (!e.target) return;
+            this.currentImageData = e.target.result as string;
+            // Cast to HTMLImageElement so TypeScript knows about the .src property
+            const preview = document.getElementById('billPreview') as HTMLImageElement | null;
+            if (preview) {
+                preview.src = this.currentImageData;
+            }
             this.showSection('previewSection');
         };
         reader.readAsDataURL(file);
@@ -229,14 +244,15 @@ class BillScanner {
                 this.showError(result.error || 'Failed to process bill');
             }
         } catch (error) {
-            this.showError('Network error: ' + error.message);
+            // Cast to Error so TypeScript knows it has a .message property
+            this.showError('Network error: ' + (error as Error).message);
         }
     }
 
     /**
      * Display extracted results
      */
-    displayResults(result) {
+    displayResults(result: Record<string, any>) {
         const data = result.data;
         const confidence = Math.round((result.confidence || 0.8) * 100);
 
@@ -263,7 +279,10 @@ class BillScanner {
         `;
 
         const preview = document.getElementById('extractedDataPreview');
-        if (preview) preview.innerHTML = previewHTML;
+        // Guard: only set innerHTML if the element exists
+        if (preview) {
+            preview.innerHTML = previewHTML;
+        }
         this.extractedData = result;
         this.showSection('resultsSection');
     }
@@ -271,7 +290,7 @@ class BillScanner {
     /**
      * Render a data field
      */
-    renderField(label, value) {
+    renderField(label: string, value: string | null | undefined) {
         if (!value) return '';
         return `
             <div style="padding: 12px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border-color);">
@@ -294,20 +313,26 @@ class BillScanner {
     /**
      * Show error message
      */
-    showError(message) {
+    showError(message: string) {
         const errorEl = document.getElementById('errorMessage');
-        if (errorEl) errorEl.textContent = message;
+        // Guard: only set text if element exists
+        if (errorEl) {
+            errorEl.textContent = message;
+        }
         this.showSection('errorSection');
     }
 
     /**
      * Show specific section, hide others
      */
-    showSection(sectionId) {
+    showSection(sectionId: string) {
         const sections = ['uploadSection', 'previewSection', 'loadingSection', 'resultsSection', 'errorSection'];
         sections.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.style.display = id === sectionId ? 'block' : 'none';
+            // Guard: only update style if element exists
+            if (el) {
+                el.style.display = id === sectionId ? 'block' : 'none';
+            }
         });
     }
 
@@ -317,8 +342,9 @@ class BillScanner {
     resetModal() {
         this.currentImageData = null;
         this.extractedData = null;
-        const fileInput = document.getElementById('billFileInput');
-        const cameraInput = document.getElementById('billCameraInput');
+        // Cast to HTMLInputElement so TypeScript knows .value exists
+        const fileInput = document.getElementById('billFileInput') as HTMLInputElement | null;
+        const cameraInput = document.getElementById('billCameraInput') as HTMLInputElement | null;
         if (fileInput) fileInput.value = '';
         if (cameraInput) cameraInput.value = '';
         this.showSection('uploadSection');

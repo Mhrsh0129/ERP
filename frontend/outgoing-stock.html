@@ -696,7 +696,7 @@
             doc.setFontSize(28);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(0, 0, 0); // Black
-            doc.text("Your Company Name", pageWidth / 2, 15, { align: "center" });
+            doc.text("Jay Shree Traders", pageWidth / 2, 15, { align: "center" });
 
             doc.setFontSize(11);
             doc.setFont("helvetica", "normal");
@@ -962,9 +962,15 @@
 
             doc.setFont("helvetica", "normal");
             doc.text("HDFC Bank", 45, bankY);
-            doc.text("Your Company Name", 45, bankY + 8);
-            doc.text("50200101611788", 150, bankY);
-            doc.text("HDFC0005222", 150, bankY + 8);
+            doc.text("Jay Shree Traders", 45, bankY + 8);
+            doc.text("5020081247635901", 150, bankY);
+            doc.text("HDFC0000489", 150, bankY + 8);
+
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+            doc.text("Branch: Rambagh Branch, Indore", 20, bankY + 17);
+            doc.setFontSize(9);
+            doc.setTextColor(0, 0, 0);
 
             currentY += bankBoxHeight + 10;
 
@@ -1006,7 +1012,7 @@
             doc.setTextColor(80, 80, 80);
 
             // Left label
-            doc.text("For Your Company Name", 52, currentY + 31, { align: "center" });
+            doc.text("For Jay Shree Traders", 52, currentY + 31, { align: "center" });
 
             // Right label
             doc.text("Customer Signature", pageWidth - 52, currentY + 31, { align: "center" });
@@ -1020,7 +1026,7 @@
             const query = document.getElementById('searchInput').value.toLowerCase();
             const filtered = stockData.filter(item =>
                 item.product_name.toLowerCase().includes(query) ||
-                item.customer_name.toLowerCase().includes(query)
+                (item.customer_name || '').toLowerCase().includes(query)
             );
             displayStock(filtered);
         }
@@ -1056,7 +1062,6 @@
 
         async function handleAdd(event) {
             event.preventDefault();
-            console.log("handleAdd triggered");
             try {
                 // Handle Product Photo
                 const productPhotoInput = document.getElementById('productPhotoInput');
@@ -1097,9 +1102,6 @@
                     bill_photo: billPhotoBase64,
                     product_photo: productPhotoBase64
                 };
-
-                // Debug alert
-                alert("Sending Data: Price=" + price + ", Qty=" + qty + ", GST=" + data.gst_number);
 
                 const result = await API.post('/outgoing-stock', data);
 
@@ -1210,12 +1212,7 @@
                     data.bill_photo = billPhotoBase64;
                 };
 
-                console.log("About to send UPDATE to API with data:", data);
-                console.log("Updating ID:", id);
-
                 const result = await API.put(`/outgoing-stock/${id}`, data);
-
-                console.log("API response:", result);
 
                 if (result.success) {
                     showAlert('Sale updated successfully!', 'success');

@@ -1,17 +1,18 @@
 const API_BASE = '/api';
 
 const API = {
-    async get(endpoint) {
+    async get(endpoint: string) {
         try {
             const response = await fetch(`${API_BASE}${endpoint}`);
             return await response.json();
         } catch (error) {
             console.error('API Error:', error);
-            return { success: false, error: error.message };
+            // Cast to Error so TypeScript knows it has a .message property
+            return { success: false, error: (error as Error).message };
         }
     },
 
-    async post(endpoint, data) {
+    async post(endpoint: string, data: unknown) {
         try {
             const response = await fetch(`${API_BASE}${endpoint}`, {
                 method: 'POST',
@@ -21,11 +22,11 @@ const API = {
             return await response.json();
         } catch (error) {
             console.error('API Error:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: (error as Error).message };
         }
     },
 
-    async put(endpoint, data) {
+    async put(endpoint: string, data: unknown) {
         try {
             const response = await fetch(`${API_BASE}${endpoint}`, {
                 method: 'PUT',
@@ -35,11 +36,11 @@ const API = {
             return await response.json();
         } catch (error) {
             console.error('API Error:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: (error as Error).message };
         }
     },
 
-    async delete(endpoint) {
+    async delete(endpoint: string) {
         try {
             const response = await fetch(`${API_BASE}${endpoint}`, {
                 method: 'DELETE'
@@ -47,18 +48,18 @@ const API = {
             return await response.json();
         } catch (error) {
             console.error('API Error:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: (error as Error).message };
         }
     }
 };
 
-function showAlert(message, type = 'success') {
+function showAlert(message: string, type = 'success') {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type}`;
     alertDiv.textContent = message;
 
     const container = document.querySelector('.container');
-    // Guard: only insert if .container exists on this page
+    // Guard: only insert if container exists on this page
     if (container) {
         container.insertBefore(alertDiv, container.firstChild);
     }
@@ -69,7 +70,7 @@ function showAlert(message, type = 'success') {
     }, 5000);
 }
 
-function formatDate(dateString) {
+function formatDate(dateString: string) {
     if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-IN', {
@@ -79,7 +80,7 @@ function formatDate(dateString) {
     });
 }
 
-function formatCurrency(amount) {
+function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: 'INR'
@@ -90,39 +91,42 @@ function confirmDelete(message = 'Are you sure you want to delete this item?') {
     return confirm(message);
 }
 
-function openModal(modalId) {
+function openModal(modalId: string) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.add('active');
     }
 }
 
-function closeModal(modalId) {
+function closeModal(modalId: string) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('active');
     }
 }
 
-function resetForm(formId) {
+function resetForm(formId: string) {
     const form = document.getElementById(formId);
     if (form) {
-        form.reset();
+        // Cast to HTMLFormElement so TypeScript knows it has a .reset() method
+        (form as HTMLFormElement).reset();
         const preview = form.querySelector('.image-preview');
         if (preview) {
-            preview.style.display = 'none';
+            // Cast to HTMLElement so TypeScript knows it has a .style property
+            (preview as HTMLElement).style.display = 'none';
         }
     }
 }
 
-function handleImageUpload(input, previewId) {
-    const file = input.files[0];
+function handleImageUpload(input: HTMLInputElement, previewId: string) {
+    const file = input.files?.[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function (e) {
-            const preview = document.getElementById(previewId);
-            if (preview) {
-                preview.src = e.target.result;
+            const preview = document.getElementById(previewId) as HTMLImageElement | null;
+            if (preview && e.target) {
+                // Cast to HTMLImageElement so TypeScript knows it has a .src property
+                preview.src = e.target.result as string;
                 preview.style.display = 'block';
             }
         };
@@ -130,10 +134,14 @@ function handleImageUpload(input, previewId) {
     }
 }
 
-function imageToBase64(file) {
+function imageToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onload = () => {
+            const result = reader.result;
+            // result is string | ArrayBuffer — we know it's a string because we used readAsDataURL
+            resolve((result as string).split(',')[1]);
+        };
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });

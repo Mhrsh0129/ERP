@@ -688,7 +688,7 @@
             const query = document.getElementById('searchInput').value.toLowerCase();
             const filtered = stockData.filter(item =>
                 item.product_name.toLowerCase().includes(query) ||
-                item.source_name.toLowerCase().includes(query)
+                (item.source_name || '').toLowerCase().includes(query)
             );
             displayStock(filtered);
         }
@@ -776,7 +776,7 @@
             document.getElementById('editId').value = data.id;
             document.getElementById('editProductName').value = data.product_name;
             document.getElementById('editSourceName').value = data.source_name;
-            document.getElementById('editDateOfPurchase').value = data.date_of_purchase.split('T')[0];
+            document.getElementById('editDateOfPurchase').value = data.date_of_purchase ? data.date_of_purchase.split('T')[0] : '';
 
             document.getElementById('editQuantity').value = data.quantity || '';
             document.getElementById('editUnit').value = data.unit || '';
