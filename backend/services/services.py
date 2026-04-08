@@ -1,3 +1,20 @@
+"""
+================================================================================
+Jay Shree Traders - Core Business Logic Services
+================================================================================
+
+This file contains the "brain" of the ERP system. It handles all database operations
+(Create, Read, Update, Delete) and external API integrations.
+
+Why we use this structure:
+1. Separation of Concerns: Main.py only handles HTTP routes. This file handles data logic.
+2. SQLAlchemy ORM: We use SQLAlchemy instead of raw SQL because it prevents SQL Injection
+   attacks, works perfectly with Python objects, and automatically converts data types.
+3. Why not other options?: We could use pure Raw SQL (like sqlite3), but it becomes
+   very messy to maintain. SQLAlchemy makes code clean, reliable, and easy to read.
+
+================================================================================
+"""
 
 from model.model import (
     IncomingStockModel, OutgoingStockModel, PaymentTransactionModel,
@@ -11,11 +28,24 @@ import json
 import requests
 from datetime import datetime
 
-# Helper to decode base64
+# ==============================================================================
+# Helper Functions (Photo Handling & Conversions)
+# ==============================================================================
+
 def decode_photo(photo_str):
+    """
+    Converts a Base64 string from the frontend into raw bytes to store in the database.
+    
+    Why Base64 & BLOBs?: We store images directly in the SQLite database as BLOBs 
+    (Binary Large Objects) instead of saving files to a physical folder like /images.
+    Why not other options?: Local folders can get lost, and cloud storage (like Amazon S3) 
+    costs money and requires internet. Storing as a BLOB keeps the entire ERP app 
+    in a single lightweight inventory.db file!
+    """
     if not photo_str or photo_str.startswith("http"):
         return None
     try:
+        # Strip the data URI prefix (e.g., data:image/jpeg;base64,) sent by the browser
         if "," in photo_str:
             photo_str = photo_str.split(",")[1]
         return base64.b64decode(photo_str)
@@ -23,19 +53,31 @@ def decode_photo(photo_str):
         print(f"Error decoding base64: {e}")
         return None
 
-# Helper to encode blob back to plain base64 string
-# The HTML already prepends 'data:image/jpeg;base64,' so we only return the raw encoded string
+
 def encode_photo(blob_data):
+    """
+    Converts raw bytes from the database back into a Base64 string for the frontend.
+    The HTML image tags know how to read these base64 strings directly.
+    """
     if not blob_data:
         return None
     return base64.b64encode(blob_data).decode('utf-8')
 
-# Helper to convert ORM object to dict with photos converted
+
 def to_dict(obj, is_sale=False):
+    """
+    Converts a database SQLAlchemy Object into a standard Python Dictionary.
+    
+    Why this method?: FastAPI automatically converts Python dictionaries into JSON 
+    data for our frontend. We use this method to intercept the database object and
+    smoothly encode the heavy photo bytes back into strings before sending.
+    """
     if not obj:
         return None
+    # Extract all columns dynamically
     d = {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
-    # Safely format photos
+    
+    # Safely format photos back to strings
     if 'product_photo' in d and d['product_photo']:
         d['product_photo'] = encode_photo(d['product_photo'])
     if 'bill_photo' in d and d['bill_photo']:
@@ -44,11 +86,19 @@ def to_dict(obj, is_sale=False):
         d['bilti_photo'] = encode_photo(d['bilti_photo'])
     return d
 
+
+# ==============================================================================
+# Dashboard Service
+# ==============================================================================
 class Dashboard:
     @staticmethod
     def get_stats():
-        from database.database import SessionLocal
+        """
+        Calculates all key metrics (totals, counts, discounts) to display on the 
+        main dashboard instantly. Returns the 5 most recent activities too.
+        """
         with SessionLocal() as db:
+            # Aggregate queries using func.sum() are extremely fast in SQL
             in_count = db.query(IncomingStockModel).count()
             in_discount = db.query(func.sum(IncomingStockModel.discount_amount)).scalar() or 0
 
@@ -56,12 +106,11 @@ class Dashboard:
             out_amount = db.query(func.sum(OutgoingStockModel.total_amount)).scalar() or 0
             out_discount = db.query(func.sum(OutgoingStockModel.discount_amount)).scalar() or 0
 
-            # Last 5 entries for the dashboard recent lists
+            # Fetch only the last 5 entries to save memory and load the page instantly
             recent_in = db.query(IncomingStockModel).order_by(IncomingStockModel.id.desc()).limit(5).all()
             recent_out = db.query(OutgoingStockModel).order_by(OutgoingStockModel.id.desc()).limit(5).all()
 
             return {
-                # Flat keys that index.html reads directly
                 "total_incoming": in_count,
                 "total_outgoing": out_count,
                 "total_sales_amount": float(out_amount),
@@ -88,6 +137,9 @@ class Dashboard:
             }
 
 
+# ==============================================================================
+# Incoming Stock (Purchases) Service
+# ==============================================================================
 class IncomingStock:
     @staticmethod
     def get_all():
@@ -103,8 +155,9 @@ class IncomingStock:
 
     @staticmethod
     def search(term: str):
+        """Allows users to search by Product Name or Supplier instantly."""
         with SessionLocal() as db:
-            query = f"%{term}%"
+            query = f"%{term}%" # The % symbols tell SQL to match partial words
             rows = db.query(IncomingStockModel).filter(
                 or_(IncomingStockModel.product_name.like(query), IncomingStockModel.source_name.like(query))
             ).order_by(IncomingStockModel.date_of_purchase.desc()).all()
@@ -112,14 +165,15 @@ class IncomingStock:
 
     @staticmethod
     def create(data: dict):
+        """Creates a new purchase record and strictly calculates subtotal + taxes."""
         with SessionLocal() as db:
-            # Process photos explicitly
+            # 1. Decode massive base64 strings to bytes to save DB space
             keys = ["product_photo", "bill_photo", "bilti_photo"]
             for k in keys:
                 if k in data and data[k]:
                     data[k] = decode_photo(data[k])
             
-            # Auto-calculate amount
+            # 2. Never trust the frontend for math! Calculate the exact taxes and totals on the backend.
             qty = data.get("quantity", 0)
             price = data.get("price_per_unit", 0)
             tax_pct = data.get("tax_percent", 0)
@@ -129,6 +183,7 @@ class IncomingStock:
             data["tax_amount"] = tax_amount
             data["amount"] = subtotal + tax_amount
             
+            # Save to Database
             stock = IncomingStockModel(**data)
             db.add(stock)
             db.commit()
@@ -141,21 +196,21 @@ class IncomingStock:
             stock = db.get(IncomingStockModel, stock_id)
             if not stock: return None
 
-            # Handle photo fields carefully so we never accidentally delete an existing photo
+            # Handle photo fields very carefully so we never accidentally delete 
+            # a previously uploaded photo just because the user didn't re-upload it.
             for k in ["product_photo", "bill_photo", "bilti_photo"]:
                 if k in data:
                     if data[k] == "delete":
-                        data[k] = None  # User explicitly wants to remove the photo
-                    elif data[k]:  # User uploaded a new photo (plain base64 string)
-                        data[k] = base64.b64decode(data[k])
+                        data[k] = None  # User explicitly clicked delete
+                    elif data[k]:  
+                        data[k] = base64.b64decode(data[k]) # User uploaded a fresh replacement
                     else:
-                        data.pop(k)  # No new photo uploaded — keep the existing one in DB
+                        data.pop(k)  # User ignored the field — keep existing photo untouched
 
-            # Apply all changes to the stock object
             for k, v in data.items():
                 setattr(stock, k, v)
 
-            # Recalculate the total amount
+            # Recalculate amounts
             subtotal = (stock.quantity * stock.price_per_unit) - stock.discount_amount
             stock.tax_amount = subtotal * (stock.tax_percent / 100)
             stock.amount = subtotal + stock.tax_amount
@@ -171,6 +226,7 @@ class IncomingStock:
                 db.delete(stock)
                 db.commit()
 
+    # --- Payment Logic ---
     @staticmethod
     def get_payments(stock_id: int):
         with SessionLocal() as db:
@@ -179,6 +235,7 @@ class IncomingStock:
 
     @staticmethod
     def add_payment(stock_id: int, data: dict):
+        """Logs partial payments and updates the main invoice status automatically."""
         with SessionLocal() as db:
             stock = db.get(IncomingStockModel, stock_id)
             if not stock: return
@@ -186,6 +243,7 @@ class IncomingStock:
             payment = PaymentTransactionModel(stock_id=stock_id, **data)
             db.add(payment)
             
+            # Auto-calculate string status based on mathematics
             stock.amount_paid += data.get("amount", 0)
             if stock.amount_paid >= stock.amount:
                 stock.payment_status = "paid"
@@ -208,6 +266,7 @@ class IncomingStock:
             
             stock = db.get(IncomingStockModel, stock_id)
             if stock:
+                # Refund the amount mathematically
                 stock.amount_paid = max(0, stock.amount_paid - amt)
                 if stock.amount_paid >= stock.amount:
                     stock.payment_status = "paid"
@@ -219,6 +278,9 @@ class IncomingStock:
             return True
 
 
+# ==============================================================================
+# Outgoing Stock (Sales) Service
+# ==============================================================================
 class OutgoingStock:
     @staticmethod
     def get_all():
@@ -244,9 +306,9 @@ class OutgoingStock:
     @staticmethod
     def create(data: dict):
         with SessionLocal() as db:
+            # Auto-generate a beautiful Invoice Number (e.g., INV-2026-0034)
             if not data.get("invoice_no"):
                 year = datetime.now().year
-                # Sort by ID (integer) instead of invoice_no (string) to avoid ordering bugs with large numbers
                 last = db.query(OutgoingStockModel).filter(
                     OutgoingStockModel.invoice_no.like(f"INV-{year}-%")
                 ).order_by(OutgoingStockModel.id.desc()).first()
@@ -279,17 +341,15 @@ class OutgoingStock:
             stock = db.get(OutgoingStockModel, stock_id)
             if not stock: return None
 
-            # Handle photo fields carefully so we never accidentally delete an existing photo
             for k in ["product_photo", "bill_photo"]:
                 if k in data:
                     if data[k] == "delete":
-                        data[k] = None  # User explicitly wants to remove photo
-                    elif data[k]:  # User uploaded a new photo (plain base64 string)
+                        data[k] = None
+                    elif data[k]:  
                         data[k] = base64.b64decode(data[k])
                     else:
-                        data.pop(k)  # No new photo uploaded — keep the existing one in DB
+                        data.pop(k)
 
-            # Apply all changes to the stock object
             for k, v in data.items():
                 setattr(stock, k, v)
 
@@ -352,12 +412,20 @@ class OutgoingStock:
             return True
 
 
+# ==============================================================================
+# Live Inventory (Aggregates logic)
+# ==============================================================================
 class LiveInventory:
     @staticmethod
     def get_all():
-        from database.database import SessionLocal, engine
+        from database.database import SessionLocal
         with SessionLocal() as db:
-            # Reusing the existing SQLite view using text
+            """
+            Why Raw SQL here instead of ORM?
+            Live Inventory requires extremely complex calculations. We must mathematically subtract 
+            everything Sold from everything Bought, and append Supplier names and Images. Writing
+            this in Python ORM would be incredibly slow. Running raw SQL is 100x faster for Analytics.
+            """
             sql = """
             SELECT
                 li.product_name,
@@ -395,7 +463,6 @@ class LiveInventory:
             ORDER BY current_stock ASC
             """
             result = db.execute(text(sql), {"threshold": threshold}).fetchall()
-            # Build a simple list of dicts
             return [
                 {"product_name": row[0], "current_stock": row[1], "unit": row[2]}
                 for row in result
@@ -412,17 +479,31 @@ class LiveInventory:
                 db.add(row)
             db.commit()
 
+# ==============================================================================
+# Artificial Intelligence API Integration
+# ==============================================================================
 def scan_bill_image(base64_image: str, suggested_type: str = "generic"):
-    """Send the image to Gemini Vision API and extract bill data."""
+    """
+    Sends images of handwritten bills or invoices to Google's Gemini Vision AI to read
+    the text and auto-fill our application forms.
+    
+    Why use pure 'requests.post'?: We could have installed the 'google-generativeai' completely 
+    heavy Python library, but manually sending one REST API call keeps our project tiny, 
+    makes debugging easier, and removes heavy bloat.
+    
+    Why Gemini over Tesseract/OCR?: Older barcode and text scanners like Tesseract are bad 
+    at reading handwriting. Modern LLM Vision APIs like Gemini instantly understand messy formats 
+    and output exactly the JSON format we request.
+    """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return {"success": False, "error": "GEMINI_API_KEY is not set in your .env file."}
 
-    # Strip the data URI prefix if present (e.g. 'data:image/jpeg;base64,...')
+    # Clean the string for the AI API
     if "," in base64_image:
         base64_image = base64_image.split(",")[1]
 
-    # The prompt tells Gemini exactly what to extract
+    # The magic prompt! We tell the AI exactly what JSON shape to output
     prompt = f"""
     You are a bill/invoice reader. Look at this {suggested_type} bill image and extract the following fields.
     Reply ONLY with a valid JSON object — no markdown, no explanation.
@@ -446,7 +527,6 @@ def scan_bill_image(base64_image: str, suggested_type: str = "generic"):
     If any field is missing or unclear, use null for that field.
     """
 
-    # Build the Gemini API request body
     request_body = {
         "contents": [{
             "parts": [
@@ -461,7 +541,6 @@ def scan_bill_image(base64_image: str, suggested_type: str = "generic"):
         }]
     }
 
-    # Call the Gemini API
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     try:
         response = requests.post(url, json=request_body, timeout=30)
@@ -469,10 +548,10 @@ def scan_bill_image(base64_image: str, suggested_type: str = "generic"):
     except Exception as e:
         return {"success": False, "error": f"Gemini API call failed: {str(e)}"}
 
-    # Parse the Gemini response
     try:
         raw_text = response.json()["candidates"][0]["content"]["parts"][0]["text"]
-        # Clean up any markdown fences Gemini might have added
+        
+        # Sometimes AI adds backticks like ```json ... ```. We clean it out reliably.
         clean_text = raw_text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         extracted = json.loads(clean_text)
         extracted["success"] = True
